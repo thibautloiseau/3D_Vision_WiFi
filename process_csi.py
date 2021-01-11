@@ -16,6 +16,7 @@ class CSI:
     def signbit_convert(self, data, maxbit):
         if data & (1 << (maxbit - 1)):
             data -= (1 << maxbit)
+
         return data
 
 
@@ -30,6 +31,7 @@ class CSI:
             return False
 
         self.ath_decodeCSIMatrix(nr, nc, nsubc, res, data)
+
         return True
 
 
@@ -88,6 +90,7 @@ class CSI:
                 self.ath_processCsiBuffer_online(data[p:], params, csilist[count])
                 p += bl + 2
                 count += 1
+
         return csilist[:count]
 
     ####################################################################################################################
@@ -95,24 +98,26 @@ class CSI:
     def get_raw_data(self):
         """Récupérer les CSI brutes"""
         res = self.ath_parseFile(self.path, self.params, filepercent=100)
+
         return res
 
 
     def get_raw_amp(self):
         """Récupérer les amplitudes brutes"""
-        res = self.ath_parseFile(self.path, self.params, filepercent=100)
+        res = self.get_raw_data()
+
         return np.abs(res)
 
 
     def get_raw_phase(self):
         """Récupérer les phases brutes"""
-        res = self.ath_parseFile(self.path, self.params, filepercent=100)
+        res = self.get_raw_data()
+
         return np.unwrap(np.angle(res))
 
 
     def plot_raw_amp(self):
         """Tracer les amplitudes brutes des CSI"""
-        #res = self.get_raw_amp()[:, i, j, :]
         res = self.get_raw_amp()
 
         res = np.reshape(res, (res.shape[0], res.shape[1] * res.shape[2] * res.shape[3]))
@@ -120,23 +125,27 @@ class CSI:
         plt.figure()
         plt.plot(res.T)
         plt.title("Raw Amplitude")
-
-        #plt.title('Raw Amplitude for channel %i' %i + '%i' %j)
         plt.xlabel('Subcarrier')
         plt.ylabel('Amplitude')
         plt.show()
 
+        return 0
 
-    def plot_raw_phase(self, i, j):
+
+    def plot_raw_phase(self):
         """Tracer les phases brutes des CSI"""
-        res = self.get_raw_phase()[:, i, j, :]
+        res = self.get_raw_phase()
+
+        res = np.reshape(res, (res.shape[0], res.shape[1] * res.shape[2] * res.shape[3]))
 
         plt.figure()
         plt.plot(res.T)
-        plt.title('Raw Phase for channel %i' %i + '%i' %j)
+        plt.title("Raw Phase")
         plt.xlabel('Subcarrier')
         plt.ylabel('Phase')
         plt.show()
+
+        return 0
 
     ####################################################################################################################
     # Amplitude processing
@@ -146,7 +155,7 @@ class CSI:
 
         amp_means = np.zeros(shape=(3, 3, 114))
         amp_std = np.zeros(shape=(3, 3, 114))
-        amp_filters = np.zeros(shape=(1000, 3, 3, 114))
+        amp_filters = np.zeros(shape=(res.shape[0], 3, 3, 114))
 
         for i in range(res.shape[1]):
             for j in range(res.shape[2]):
@@ -161,16 +170,20 @@ class CSI:
         return amp_filters[1: -1]
 
 
-    def plot_processed_amp(self, i, j):
+    def plot_processed_amp(self):
         """Tracer l'amplitude corrigée"""
-        res = self.process_amp()[:, i, j, :]
+        res = self.process_amp()
+
+        res = np.reshape(res, (res.shape[0], res.shape[1] * res.shape[2] * res.shape[3]))
 
         plt.figure()
         plt.plot(res.T)
-        plt.title('Processed amplitude for channel %i' %i + '%i' %j)
+        plt.title("Processed amplitude")
         plt.xlabel('Subcarrier')
         plt.ylabel('Amplitude')
         plt.show()
+
+        return 0
 
     ####################################################################################################################
     # Phase processing
@@ -190,16 +203,20 @@ class CSI:
         return corrected_phases
 
 
-    def plot_processed_phase(self, i, j):
+    def plot_processed_phase(self):
         """Tracer la phase corrigée"""
-        res = self.process_phase()[:, i, j, :]
+        res = self.process_phase()
+
+        res = np.reshape(res, (res.shape[0], res.shape[1] * res.shape[2] * res.shape[3]))
 
         plt.figure()
         plt.plot(res.T)
-        plt.title('Corrected phase for channel %i' %i + '%i' %j)
+        plt.title("Processed phase")
         plt.xlabel('Subcarrier')
         plt.ylabel('Phase')
         plt.show()
+
+        return 0
 
     ####################################################################################################################
     # Autres techniques de filtrage
@@ -223,6 +240,8 @@ class CSI:
         plt.ylabel('Phase')
         plt.show()
 
+        return 0
+
 
     def svd_processed_phase(self, i, j):
         """Filtrage par décomposition en valeurs singulières"""
@@ -244,11 +263,51 @@ class CSI:
         plt.ylabel('Phase')
         plt.show()
 
-    ####################################################################################################################
-    # Algorithme MUSIC pour trouver les directions d'arrivée
+        return 0
 
-    def DOA(self):
+    ####################################################################################################################
+    # Algorithmes MUSIC pour trouver les directions d'arrivée
+
+    def noise_subspace(self):
         """Récupérer la direction d'arrivée du signal en degré à partir des amplitudes uniquement"""
-        res = self.get_raw_amp()
-        print(res.shape)
+        amps = self.process_amp()
+        phases = self.process_phase()
+
+        mean_amps = amps.mean(axis=0)
+        mean_phases = phases.mean(axis=0)
+
+        mean_csi = mean_amps * np.exp(1j * mean_phases)
+        mean_csi = np.reshape(mean_csi, (mean_csi.shape[0] * mean_csi.shape[1], mean_csi.shape[2]))
+
+        Rx = np.dot(mean_csi, np.conj(mean_csi.T))
+
+        eigvals, eigvecs = np.linalg.eig(Rx)
+
+        # On ordonne les valeurs propres et les vecteurs propres par ordre décroissant
+        idx = eigvals.argsort()[::-1]
+        eigvecs = eigvecs[:, idx]
+
+        noise_subspace = eigvecs[:, 3:]
+
+        return noise_subspace
+
+    def pseudo_spectrum(self):
+        noise_subspace = self.noise_subspace()
+
+        omegas = np.linspace(0, 2*np.pi, 10000)
+        e_omegas = np.array([np.exp(1j * i * omegas) for i in range(9)]).T
+
+        inv_spectrum = np.array([np.dot(np.dot(np.dot(np.conj(e_omegas[i]), noise_subspace), np.conj(noise_subspace).T), e_omegas[i]) for i in range(e_omegas.shape[0])])
+
+        return (omegas, np.abs(1 / inv_spectrum))
+
+    def plot_pseudo_spectrum(self):
+        """Tracé du pseudo-spectre de l'algorithme MUSIC"""
+        pseudo_spectrum = self.pseudo_spectrum()
+
+        plt.figure()
+        plt.title(self.path)
+        plt.plot(180/np.pi*pseudo_spectrum[0]-180, pseudo_spectrum[1])
+        plt.show()
+
         return 0
