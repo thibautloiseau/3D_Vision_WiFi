@@ -269,7 +269,7 @@ class CSI:
     # Algorithmes MUSIC pour trouver les directions d'arrivée
 
     def noise_subspace(self):
-        """Récupérer la direction d'arrivée du signal en degré à partir des amplitudes uniquement"""
+        """Récupérer le sous-espace bruit"""
         amps = self.process_amp()
         phases = self.process_phase()
 
@@ -292,9 +292,10 @@ class CSI:
         return noise_subspace
 
     def pseudo_spectrum(self):
+        """Récupérer le pseudo-spectre issu de l'algorithme MUSIC"""
         noise_subspace = self.noise_subspace()
 
-        omegas = np.linspace(0, 2*np.pi, 10000)
+        omegas = np.linspace(-np.pi, np.pi, 360)
         e_omegas = np.array([np.exp(1j * i * omegas) for i in range(9)]).T
 
         inv_spectrum = np.array([np.dot(np.dot(np.dot(np.conj(e_omegas[i]), noise_subspace), np.conj(noise_subspace).T), e_omegas[i]) for i in range(e_omegas.shape[0])])
@@ -307,7 +308,7 @@ class CSI:
 
         plt.figure()
         plt.title(self.path)
-        plt.plot(180/np.pi*pseudo_spectrum[0]-180, pseudo_spectrum[1])
+        plt.plot(180/np.pi*pseudo_spectrum[0], pseudo_spectrum[1])
         plt.show()
 
         return 0
