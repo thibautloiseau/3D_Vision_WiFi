@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 class CSI:
 
     def __init__(self, path):
@@ -19,7 +20,6 @@ class CSI:
 
         return data
 
-
     def ath_processCsiBuffer_online(self, data, params, res):
         blocklen = int.from_bytes(data[:2], byteorder=self.ENDIANESS)
         nsubc = int(data[18])
@@ -33,7 +33,6 @@ class CSI:
         self.ath_decodeCSIMatrix(nr, nc, nsubc, res, data)
 
         return True
-
 
     def ath_decodeCSIMatrix(self, nr, nc, nsubc, matrix, data):
         bitmask = (1 << 10) - 1
@@ -76,7 +75,6 @@ class CSI:
         if nsubc == 114:  # for 40mhz need to apply 90deg rotation
             matrix[:, :, 57:] = matrix[:, :, 57:] * np.exp(-1j * np.pi / 2)
 
-
     def ath_parseFile(self, fpath, params, filepercent=100, limit=100000):
         csilist = np.empty((limit, params['Nrx'], params['Ntx'], params['Nsubcarriers']), dtype=complex)
         count = 0
@@ -101,20 +99,17 @@ class CSI:
 
         return res
 
-
     def get_raw_amp(self):
         """Récupérer les amplitudes brutes"""
         res = self.get_raw_data()
 
         return np.abs(res)
 
-
     def get_raw_phase(self):
         """Récupérer les phases brutes"""
         res = self.get_raw_data()
 
         return np.unwrap(np.angle(res))
-
 
     def plot_raw_amp(self):
         """Tracer les amplitudes brutes des CSI"""
@@ -130,7 +125,6 @@ class CSI:
         plt.show()
 
         return 0
-
 
     def plot_raw_phase(self):
         """Tracer les phases brutes des CSI"""
@@ -163,12 +157,11 @@ class CSI:
                 amp_std[i, j] = [np.std(res[:, i, j, k]) for k in range(res.shape[3])]
 
                 for k in range(1, res.shape[0] - 1):
-                    amp_filter = 1/3 * (res[k-1, i, j, :] + res[k, i, j, :] + res[k+1, i, j, :])
+                    amp_filter = 1 / 3 * (res[k - 1, i, j, :] + res[k, i, j, :] + res[k + 1, i, j, :])
                     if np.cov(amp_filter, amp_means[i, j])[0, 1] > 0:
                         amp_filters[k, i, j, :] = amp_filter
 
         return amp_filters[1: -1]
-
 
     def plot_processed_amp(self):
         """Tracer l'amplitude corrigée"""
@@ -198,10 +191,10 @@ class CSI:
                 for j in range(res.shape[2]):
                     slope = (res[k, i, j, -1] - res[k, i, j, 0]) / (res.shape[3] - 1)
                     intercept = np.mean(res[k, i, j, :])
-                    corrected_phases[k, i, j] = res[k, i, j] - slope * np.array([i for i in range(res.shape[3])]) - intercept
+                    corrected_phases[k, i, j] = res[k, i, j] - slope * np.array(
+                        [i for i in range(res.shape[3])]) - intercept
 
         return corrected_phases
-
 
     def plot_processed_phase(self):
         """Tracer la phase corrigée"""
@@ -226,8 +219,7 @@ class CSI:
         res = self.process_phase()[:, i, j, :]
         mean_phase = np.array([np.mean(res[:, k]) for k in range(res.shape[1])])
 
-        return(mean_phase)
-
+        return (mean_phase)
 
     def plot_mean_phase(self, i, j):
         """Tracé de la phase traitée par la moyenne"""
@@ -242,15 +234,13 @@ class CSI:
 
         return 0
 
-
     def svd_processed_phase(self, i, j):
         """Filtrage par décomposition en valeurs singulières"""
         res = self.process_phase()[:, i, j, :].T
 
         U, _, _ = np.linalg.svd(res)
 
-        return(U[:, 0])
-
+        return (U[:, 0])
 
     def plot_svd_phase(self, i, j):
         """Tracé de la phase traitée par SVD"""
@@ -293,14 +283,16 @@ class CSI:
 
     def pseudo_spectrum(self):
         """Récupérer le pseudo-spectre issu de l'algorithme MUSIC"""
-        noise_subspace = self.noise_subspace()
+        noise_subspace = self.noise_subspace
 
         omegas = np.linspace(-np.pi, np.pi, 360)
         e_omegas = np.array([np.exp(1j * i * omegas) for i in range(9)]).T
 
-        inv_spectrum = np.array([np.dot(np.dot(np.dot(np.conj(e_omegas[i]), noise_subspace), np.conj(noise_subspace).T), e_omegas[i]) for i in range(e_omegas.shape[0])])
+        inv_spectrum = np.array(
+            [np.dot(np.dot(np.dot(np.conj(e_omegas[i]), noise_subspace), np.conj(noise_subspace).T), e_omegas[i]) for i
+             in range(e_omegas.shape[0])])
 
-        return (omegas, np.abs(1 / inv_spectrum))
+        return omegas, np.abs(1 / inv_spectrum)
 
     def plot_pseudo_spectrum(self):
         """Tracé du pseudo-spectre de l'algorithme MUSIC"""
@@ -308,7 +300,7 @@ class CSI:
 
         plt.figure()
         plt.title(self.path)
-        plt.plot(180/np.pi*pseudo_spectrum[0], pseudo_spectrum[1])
+        plt.plot(180 / np.pi * pseudo_spectrum[0], pseudo_spectrum[1])
         plt.show()
 
         return 0
