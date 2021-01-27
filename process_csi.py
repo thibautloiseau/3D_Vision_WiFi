@@ -9,7 +9,7 @@ class CSI:
         self.ENDIANESS = 'big'
         self.params = {
             'Nrx': 3,
-            'Ntx': 3,
+            'Ntx': 1,
             'Nsubcarriers': 114,
         }
 
@@ -147,9 +147,9 @@ class CSI:
         """Traiter l'amplitude des CSI"""
         res = self.get_raw_amp()
 
-        amp_means = np.zeros(shape=(3, 3, 114))
-        amp_std = np.zeros(shape=(3, 3, 114))
-        amp_filters = np.zeros(shape=(res.shape[0], 3, 3, 114))
+        amp_means = np.zeros(shape=(self.params['Nrx'], self.params['Ntx'], self.params['Nsubcarriers']))
+        amp_std = np.zeros(shape=(self.params['Nrx'], self.params['Ntx'], self.params['Nsubcarriers']))
+        amp_filters = np.zeros(shape=(res.shape[0], self.params['Nrx'], self.params['Ntx'], self.params['Nsubcarriers']))
 
         for i in range(res.shape[1]):
             for j in range(res.shape[2]):
@@ -277,30 +277,28 @@ class CSI:
         idx = eigvals.argsort()[::-1]
         eigvecs = eigvecs[:, idx]
 
-        noise_subspace = eigvecs[:, 3:]
+        noise_subspace = eigvecs[:, -2:]
 
         return noise_subspace
 
     def pseudo_spectrum(self):
         """Récupérer le pseudo-spectre issu de l'algorithme MUSIC"""
-        noise_subspace = self.noise_subspace
+        noise_subspace = self.noise_subspace()
 
         omegas = np.linspace(-np.pi, np.pi, 360)
-        e_omegas = np.array([np.exp(1j * i * omegas) for i in range(9)]).T
+        e_omegas = np.array([np.exp(1j * i * omegas) for i in range(noise_subspace.shape[0])]).T
 
-        inv_spectrum = np.array(
-            [np.dot(np.dot(np.dot(np.conj(e_omegas[i]), noise_subspace), np.conj(noise_subspace).T), e_omegas[i]) for i
-             in range(e_omegas.shape[0])])
+        inv_spectrum = np.array([np.dot(np.dot(np.dot(np.conj(e_omegas[i]), noise_subspace), np.conj(noise_subspace).T), e_omegas[i]) for i in range(e_omegas.shape[0])])
 
-        return omegas, np.abs(1 / inv_spectrum)
+        return (omegas, np.abs(1 / inv_spectrum), 180 / np.pi * omegas[np.argmax(1 / inv_spectrum)])
 
     def plot_pseudo_spectrum(self):
         """Tracé du pseudo-spectre de l'algorithme MUSIC"""
         pseudo_spectrum = self.pseudo_spectrum()
 
         plt.figure()
-        plt.title(self.path)
-        plt.plot(180 / np.pi * pseudo_spectrum[0], pseudo_spectrum[1])
+        plt.title(self.path + " " + str(pseudo_spectrum[2]))
+        plt.plot(180 / np.pi * pseudo_spectrum[0], pseudo_spectrum[1], '+')
         plt.show()
 
         return 0
