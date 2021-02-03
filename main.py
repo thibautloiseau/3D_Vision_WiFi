@@ -16,9 +16,24 @@ def main():
     plt.title("Measures for calibration")
     plt.xlim(-90, 90)
     plt.ylim(-90, 90)
-    plt.xlabel("Expected measures (in degrees)")
-    plt.ylabel("Effective measures with MUSIC algorithm (in degrees")
-    plt.plot(expMeasures, measures, '+')
+    plt.xlabel("Effective measures with MUSIC algorithm (in degrees)")
+    plt.ylabel("Expected measures (in degrees)")
+    plt.plot(measures, expMeasures, '+')
+    plt.show()
+
+    for doc in os.listdir("Philibert/"):
+        print(doc)
+        expMeasures.append(float(doc))
+        CSI = process.CSI("Philibert/" + doc)
+        measures.append(CSI.pseudo_spectrum()[-1])
+
+    plt.figure()
+    plt.title("Measures for calibration")
+    plt.xlim(-90, 90)
+    plt.ylim(0, 90)
+    plt.xlabel("Effective measures with MUSIC algorithm (in degrees)")
+    plt.ylabel("Expected measures (in degrees)")
+    plt.plot(measures, expMeasures, '+')
     plt.show()
 
 
