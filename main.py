@@ -1,6 +1,5 @@
 import os
 import process_csi as process
-import numpy as np
 import matplotlib.pyplot as plt
 
 def main():
