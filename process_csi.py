@@ -141,6 +141,22 @@ class CSI:
 
         return 0
 
+    def plot_phase_evolution(self):
+        """Permet de voir l'évolution de la phase"""
+        res = self.get_raw_phase()
+
+        # On trace l'évolution de la phase de la première sous-porteuse pour le premier canal (<=> évolution temporelle)
+        phase = res[:, 0, 0, 0]
+
+        plt.figure()
+        plt.title("Évolution de la phase pour la première sous-porteuse du premier canal \n" + self.path)
+        plt.plot(phase)
+        plt.xlabel("Paquets")
+        plt.ylabel("Phase de la première sous-porteuse du premier canal")
+        plt.show()
+
+        return 0
+
     ####################################################################################################################
     # Amplitude processing
     def process_amp(self):
@@ -200,7 +216,7 @@ class CSI:
 
         corrected_phases = corrected_phases - corrected_phases[0, 0, 0, 0]
 
-        return corrected_phases
+        return np.unwrap(corrected_phases)
 
     def plot_processed_phase(self):
         """Tracer la phase corrigée"""
@@ -216,6 +232,19 @@ class CSI:
         plt.show()
 
         return 0
+
+    def plot_processed_phase_evolution(self):
+        """Tracer l'évolution temporelle de la phase corrigée"""
+        res = self.process_phase()
+
+        corrected_phase = res[:, 0, 0, 0]
+
+        plt.figure()
+        plt.title("Évolution de la phase corrigée \n" + self.path)
+        plt.plot(corrected_phase)
+        plt.xlabel("Paquet")
+        plt.ylabel("Phase corrigée de la première sous-porteuse du premier canal")
+        plt.show()
 
     ####################################################################################################################
     # Autres techniques de filtrage
@@ -318,5 +347,5 @@ class CSI:
         plt.title(self.path + " " + str(pseudo_spectrum[2]))
         plt.plot(180 / np.pi * pseudo_spectrum[0], pseudo_spectrum[1], '+')
         plt.show()
-
+ 
         return 0

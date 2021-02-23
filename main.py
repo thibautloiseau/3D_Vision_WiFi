@@ -4,10 +4,9 @@ import matplotlib.pyplot as plt
 
 def main():
     for doc in os.listdir("setup/1tx_3rx"):
-        print(doc)
+        print("setup/1tx_3rx/" + doc)
         CSI = process.CSI("setup/1tx_3rx/" + doc)
-        CSI.pseudo_spectrum()
-
+        CSI.plot_processed_phase_evolution()
 
     # measures = []
     # expMeasures = []
