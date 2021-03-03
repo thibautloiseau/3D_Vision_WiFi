@@ -141,15 +141,15 @@ class CSI:
 
         return 0
 
-    def raw_phase_evolution(self):
+    def raw_phase_evolution(self, subcarrier):
         """Permet de voir l'évolution de la phase pour une seule antenne"""
         res = self.get_raw_phase()
 
         # On trace l'évolution de la phase d'une sous-porteuse pour le premier canal (<=> évolution temporelle)
-        phase = np.unwrap(res[:, 0, 0, 50])
+        phase = np.unwrap(res[:, 0, 0, subcarrier])
 
         plt.figure()
-        plt.title("Évolution de la phase pour une sous-porteuse du premier canal \n" + self.path)
+        plt.title("Évolution de la phase pour la sous-porteuse " + str(subcarrier) + " du premier canal \n" + self.path)
         plt.plot(phase)
         plt.xlabel("Paquets")
         plt.ylabel("Phase d'une sous-porteuse du premier canal")
@@ -157,14 +157,15 @@ class CSI:
 
         return 0
 
-    def raw_channel_to_channel_phase_evolution(self):
+    def raw_channel_to_channel_phase_evolution(self, subcarrier):
         """Trace l'évolution de la différence de phase pour une sous-porteuse entre 2 canaux"""
         res = self.get_raw_phase()
 
-        diff_phase = np.unwrap(res[:, 0, 0, 50] - res[:, 1, 0, 50])
+        diff_phase = np.unwrap(res[:, 0, 0, subcarrier] - res[:, 1, 0, subcarrier])
 
         plt.figure()
-        plt.title("Évolution de la différence de phase entre les deux premiers channels pour une sous-porteuse\n" + self.path + "\n" + str(np.mean(diff_phase)) + "$\pm$" + str(3*np.std(diff_phase)))
+        plt.title("Évolution de la différence de phase entre les deux premiers channels pour la sous-porteuse " + str(subcarrier) + "\n"
+                  + self.path + "\n" + str(np.mean(diff_phase)) + "$\pm$" + str(3*np.std(diff_phase)))
         plt.plot(diff_phase)
         plt.xlabel("Paquets")
         plt.ylabel("Différence de phase")
@@ -216,7 +217,7 @@ class CSI:
 
     ####################################################################################################################
     # Phase processing
-    def process_phase(self):
+    def process_phase(self, rx, tx, subcarrier):
         """Traiter la phase des CSI"""
         res = self.get_raw_phase()
 
@@ -229,13 +230,13 @@ class CSI:
                     intercept = np.mean(res[k, i, j, :])
                     corrected_phases[k, i, j] = res[k, i, j] - slope * np.array([i for i in range(res.shape[3])]) - intercept
 
-            corrected_phases[k, :, :, :] = corrected_phases[k, :, :, :] - corrected_phases[k, 0, 0, 0]
+        corrected_phases = corrected_phases - corrected_phases[0, rx, tx, subcarrier]
 
         return np.unwrap(corrected_phases)
 
-    def plot_processed_phase(self):
+    def plot_processed_phase(self, rx, tx, subcarrier):
         """Tracer la phase corrigée"""
-        res = self.process_phase()
+        res = self.process_phase(rx, tx, subcarrier)
 
         res = np.reshape(res, (res.shape[0], res.shape[1] * res.shape[2] * res.shape[3]))
 
@@ -248,17 +249,17 @@ class CSI:
 
         return 0
 
-    def plot_processed_phase_evolution(self):
+    def plot_processed_phase_evolution(self, rx, tx, subcarrier):
         """Tracer l'évolution temporelle de la phase corrigée"""
-        res = self.process_phase()
+        res = self.process_phase(rx, tx, subcarrier)
 
-        corrected_phase = res[:, 0, 0, 0]
+        corrected_phase = res[:, rx, tx, subcarrier]
 
         plt.figure()
         plt.title("Évolution de la phase corrigée \n" + self.path)
         plt.plot(corrected_phase)
         plt.xlabel("Paquet")
-        plt.ylabel("Phase corrigée de la première sous-porteuse du premier canal")
+        plt.ylabel("Évolution de la phase corrigée")
         plt.show()
 
         return 0
@@ -310,10 +311,10 @@ class CSI:
     ####################################################################################################################
     # Algorithmes MUSIC pour trouver les directions d'arrivée
 
-    def noise_subspaces(self):
+    def noise_subspaces(self, rx, tx, subcarrier):
         """Récupérer le sous-espace bruit pour chaque paquet"""
         amps = self.process_amp()
-        phases = self.process_phase()
+        phases = self.process_phase(rx, tx, subcarrier)
 
         proc_csi = amps * np.exp(1j * phases)
         noise_subspaces = np.zeros(shape=(proc_csi.shape[0], self.params['Nrx'], 2), dtype=complex)
@@ -336,9 +337,9 @@ class CSI:
 
         return noise_subspaces
 
-    def pseudo_spectrum(self):
+    def pseudo_spectrum(self, rx, tx, subcarrier):
         """Récupérer les pseudo-spectre issu de l'algorithme MUSIC pour chaque paquet"""
-        noise_subspaces = self.noise_subspaces()
+        noise_subspaces = self.noise_subspaces(rx, tx, subcarrier)
 
         omegas = np.linspace(-np.pi, np.pi, 360)
         e_omegas = np.array([np.exp(1j * i * omegas) for i in range(noise_subspaces.shape[1])]).T
@@ -355,13 +356,13 @@ class CSI:
         pseudo_spectrum = np.mean(pseudo_spectrums, axis=0)
 
         maximum = np.mean(maximums)
-        std_error_maximum = 3*np.std(maximums)# Assumption of a Gaussian distribution
+        std_error_maximum = 3*np.std(maximums) # Assumption of a Gaussian distribution
 
         return(omegas, pseudo_spectrum, maximum, std_error_maximum)
 
-    def plot_pseudo_spectrum(self):
+    def plot_pseudo_spectrum(self, rx, tx, subcarrier):
         """Tracé du pseudo-spectre de l'algorithme MUSIC"""
-        pseudo_spectrum = self.pseudo_spectrum()
+        pseudo_spectrum = self.pseudo_spectrum(rx, tx, subcarrier)
 
         plt.figure()
         plt.title(self.path + " - Maximum : " + str(pseudo_spectrum[2]) + "$\pm$" + str(pseudo_spectrum[3]))

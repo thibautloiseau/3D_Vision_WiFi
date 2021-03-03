@@ -1,12 +1,40 @@
 import os
 import process_csi as process
+import json
 import matplotlib.pyplot as plt
 
 def main():
+    ####################################################################################################################
+    # Stats sur les DoA
+
+    stats = {}
+    subcarriers = [i for i in range(114) if i%10 == 0]
+
     for doc in os.listdir("setup/03-03-2021_grosse_chambre_Thibaut"):
-        print("setup/03-03-2021_grosse_chambre_Thibaut/" + doc)
-        CSI = process.CSI("setup/1tx_3rx/" + doc)
-        CSI.plot_pseudo_spectrum()
+        if doc != "continuous":
+            stats[str(doc)] = {}
+
+            print("setup/03-03-2021_grosse_chambre_Thibaut/" + doc)
+            CSI = process.CSI("setup/03-03-2021_grosse_chambre_Thibaut/" + doc)
+
+            for rx in range(CSI.params["Nrx"]):
+                print("Rx: " + str(rx))
+                stats[str(doc)][str(rx)] = {}
+
+                for tx in range(CSI.params["Ntx"]):
+                    print("\tTx: " + str(tx))
+                    stats[str(doc)][str(rx)][str(tx)] = {}
+
+                    for subcarrier in subcarriers:
+                        print("\t\tSubcarrier: " + str(subcarrier))
+                        info = CSI.pseudo_spectrum(rx, tx, subcarrier)
+                        stats[str(doc)][str(rx)][str(tx)][str(subcarrier)] = {"max": info[-2], "std_err": info[-1]}
+
+        with open("stats/stats.json", "w") as file:
+            json.dump(stats, file, indent=2)
+
+    ####################################################################################################################
+    # Tracés des mesures
 
     # measures = []
     # expMeasures = []
