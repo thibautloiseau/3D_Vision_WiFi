@@ -146,7 +146,7 @@ class CSI:
         res = self.get_raw_phase()
 
         # On trace l'évolution de la phase de la première sous-porteuse pour le premier canal (<=> évolution temporelle)
-        phase = res[:, 0, 0, 0]
+        phase = np.unwrap(res[:, 0, 0, 0])
 
         plt.figure()
         plt.title("Évolution de la phase pour la première sous-porteuse du premier canal \n" + self.path)
@@ -237,7 +237,7 @@ class CSI:
         """Tracer l'évolution temporelle de la phase corrigée"""
         res = self.process_phase()
 
-        corrected_phase = res[:, 0, 0, 0]
+        corrected_phase = np.unwrap(res[:, 0, 0, 0])
 
         plt.figure()
         plt.title("Évolution de la phase corrigée \n" + self.path)

@@ -3,10 +3,10 @@ import process_csi as process
 import matplotlib.pyplot as plt
 
 def main():
-    for doc in os.listdir("setup/1tx_3rx"):
-        print("setup/1tx_3rx/" + doc)
+    for doc in os.listdir("setup/03-03-2021_grosse_chambre_Thibaut"):
+        print("setup/03-03-2021_grosse_chambre_Thibaut/" + doc)
         CSI = process.CSI("setup/1tx_3rx/" + doc)
-        CSI.plot_processed_phase_evolution()
+        CSI.plot_pseudo_spectrum()
 
     # measures = []
     # expMeasures = []
