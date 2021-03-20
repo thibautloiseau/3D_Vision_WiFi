@@ -353,7 +353,7 @@ class CSI:
             pseudo_spectrums[i] = np.reciprocal(np.abs(inv_spectrum))
             maximums[i] = 180 / np.pi * omegas[np.argmax(pseudo_spectrums[i])]
 
-        pseudo_spectrum = np.mean(pseudo_spectrums, axis=0)
+        pseudo_spectrum = np.abs(np.mean(pseudo_spectrums, axis=0))
 
         maximum = np.mean(maximums)
         std_error_maximum = 3*np.std(maximums) # Assumption of a Gaussian distribution
@@ -365,8 +365,26 @@ class CSI:
         pseudo_spectrum = self.pseudo_spectrum(rx, tx, subcarrier)
 
         plt.figure()
-        plt.title(self.path + " - Maximum : " + str(pseudo_spectrum[2]) + "$\pm$" + str(pseudo_spectrum[3]))
+        plt.title(self.path + "\nMaximum : " + str(pseudo_spectrum[2]) + "$\pm$" + str(pseudo_spectrum[3]))
         plt.plot(180 / np.pi * pseudo_spectrum[0], pseudo_spectrum[1], '+')
         plt.show()
  
         return 0
+
+    ####################################################################################################################
+    # Calcul brut des DoA
+    def raw_calculus(self):
+        res = self.process_phase(0, 0, 0)
+
+        bande = 40e6
+        freq = np.array([5805e6-bande/2 + bande/self.params["Nsubcarriers"]*i for i in range(self.params["Nsubcarriers"])])
+        long_onde = 3e8/freq
+
+        phase_diff = res[:, 0, 0, :] - res[:, 1, 0, :]
+
+        # for k in range(phase_diff.shape[0]):
+        thetas = 180/np.pi*np.arcsin(np.unwrap(long_onde*phase_diff/0.027))
+        mean_theta = np.mean(thetas)
+        std_err = np.std(thetas)
+
+        return(mean_theta, std_err)
