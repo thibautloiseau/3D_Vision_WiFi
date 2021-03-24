@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 class CSI:
 
     def __init__(self, path):
@@ -372,8 +371,8 @@ class CSI:
         return 0
 
     ####################################################################################################################
-    # Calcul brut des DoA
     def raw_calculus(self):
+        """Calcul naïf des DoA"""
         res = self.process_phase(0, 0, 0)
 
         bande = 40e6
@@ -388,3 +387,19 @@ class CSI:
         std_err = np.std(thetas)
 
         return(mean_theta, std_err)
+
+    ####################################################################################################################
+    # Création de fichiers plus courts pour les acquisitions continues
+    def shorten_continuous_file(self, dest):
+        """Raccourcir les fichiers d'acquisitions qui font 30000 paquets de base, on moyenne sur 10 paquets"""
+        res = self.get_raw_data()
+        shorten_res = np.zeros(shape=(int(res.shape[0]/10), res.shape[1], res.shape[2], res.shape[3]), dtype=complex)
+
+        for i in range(res.shape[0]):
+            if i%10 == 0:
+                shorten_res[int(i/10)] = np.mean(res[i: i+10], axis=0)
+
+        np.save(dest, shorten_res)
+
+        return shorten_res
+

@@ -1,24 +1,31 @@
 import os
 import process_csi as process
+import continuous_csi as continuous
 import json
 import matplotlib.pyplot as plt
 
 def main():
+    ####################################################################################################################
+    # Traitement des fichiers d'acquisition continues
+    CSI = continuous.CSI("setup/03-03-2021_grosse_chambre_Thibaut/shorten_continuous.npy")
+    CSI.plot_DoA(0, 0, 0)
 
-    thetas = {}
-    for doc in os.listdir("setup/03-03-2021_grosse_chambre_Thibaut"):
-        if doc != "continuous":
-            thetas[doc] = {}
-            print(doc)
-            CSI = process.CSI("setup/03-03-2021_grosse_chambre_Thibaut/" + doc)
-            info = CSI.raw_calculus()
-            thetas[doc]["mean_theta"] = info[0]
-            thetas[doc]["std_err"] = info[1]
+    ####################################################################################################################
+    # Stats avec le calcul naïf
+    # thetas = {}
+    # for doc in os.listdir("setup/03-03-2021_grosse_chambre_Thibaut"):
+    #     if doc != "continuous":
+    #         thetas[doc] = {}
+    #         print(doc)
+    #         CSI = process.CSI("setup/03-03-2021_grosse_chambre_Thibaut/" + doc)
+    #         info = CSI.raw_calculus()
+    #         thetas[doc]["mean_theta"] = info[0]
+    #         thetas[doc]["std_err"] = info[1]
+    #
+    # print(thetas)
 
-    print(thetas)
-
-    with open("thetas.json", "w") as file:
-         json.dump(thetas, file, indent=2)
+    # with open("thetas.json", "w") as file:
+    #      json.dump(thetas, file, indent=2)
 
     ####################################################################################################################
     # Stats sur les DoA
