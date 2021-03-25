@@ -3,13 +3,31 @@ import process_csi as process
 import continuous_csi as continuous
 import json
 import matplotlib.pyplot as plt
+import numpy as np
 
 def main():
     # MMP technique
-    CSI = process.CSI("setup/03-03-2021_grosse_chambre_Thibaut/-80")
+    no_docs = len([doc for doc in os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut") if "continuous" not in doc])
+    data = np.zeros(shape=(no_docs, 2))
 
-    for paquet in range(1000):
-        print(CSI.MMP(paquet))
+    for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
+        if "continuous" not in doc:
+            print(doc)
+            CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
+            data[idx] = np.array([int(doc), CSI.aggregation_MMP()[0]])
+
+    print(data)
+
+    x = np.array([-90, 90])
+
+    plt.figure()
+    plt.title("acquisitions/03-03-2021_grosse_chambre_Thibaut")
+    plt.xlabel("Expected DoA (°)")
+    plt.ylabel("Calculated DoA (°)")
+    plt.plot(x, x, 'r')
+    plt.plot(data[:, 0], data[:, 1], '+')
+    plt.show()
+
 
     ####################################################################################################################
     # Traitement des fichiers d'acquisition continues

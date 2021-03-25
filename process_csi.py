@@ -434,7 +434,7 @@ class CSI:
 
         return Ce
 
-    def MMP(self, paquet):
+    def DoA_MMP(self, paquet):
         """Méthode MMP pour retrouver les directions d'arrivée"""
         Ce = self.Ce_matrix(paquet)
         m = self.params["Nsubcarriers"]//2
@@ -455,6 +455,33 @@ class CSI:
         M = np.linalg.pinv(Us1) @ Us2
         eigvals, _ = np.linalg.eig(M)
 
-        thetas = 180/np.pi * (np.arcsin(-long_onde*np.angle(eigvals) / (2*np.pi*d)))
+        thetas = 180/np.pi * np.unwrap((np.arcsin(-long_onde*np.angle(eigvals) / (2*np.pi*d))))
+
+        return thetas
+
+    def aggregation_MMP(self):
+        """Aggregation de paquets pour un meilleur SNR et une mesure plus sûre"""
+        res = self.get_raw_data()
+        m = self.params["Nsubcarriers"]*3 // 2
+        d = 2.7e-2  # distance entre 2 antennes
+        long_onde = 2.99792e8 / 5805e6  # c/f
+
+        aggregate_csi = np.zeros(shape=(self.params["Nsubcarriers"] * 3, res.shape[0]), dtype=complex)
+
+        for i in range(res.shape[0]):
+            aggregate_csi[:, i] = np.reshape(res[i], (res[i].shape[2]*3))
+
+        U, _, _ = np.linalg.svd(aggregate_csi)
+
+        Us = U[:, :2]
+
+        Us1 = Us[m:, :]
+        Us2 = Us[:m, :]
+
+        # On écrit notre matrice qui correspondra au sous-espace signal et on calcule les valeurs propres
+        M = np.linalg.pinv(Us1) @ Us2
+        eigvals, _ = np.linalg.eig(M)
+
+        thetas = 180 / np.pi * np.unwrap((np.arcsin(-long_onde * np.angle(eigvals) / (2 * np.pi * d))))
 
         return thetas
