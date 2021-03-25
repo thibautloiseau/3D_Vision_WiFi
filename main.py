@@ -5,13 +5,19 @@ import json
 import matplotlib.pyplot as plt
 
 def main():
+    # MMP technique
+    CSI = process.CSI("setup/03-03-2021_grosse_chambre_Thibaut/-80")
+
+    for paquet in range(1000):
+        print(CSI.MMP(paquet))
+
     ####################################################################################################################
     # Traitement des fichiers d'acquisition continues
     # CSI = process.CSI("setup/03-03-2021_grosse_chambre_Philibert/continuous")
     # CSI.shorten_continuous_file("setup/03-03-2021_grosse_chambre_Philibert/shorten_continuous")
 
-    CSI = continuous.CSI("setup/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
-    CSI.plot_DoA(0, 0, 0)
+    # CSI = continuous.CSI("setup/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
+    # CSI.plot_DoA(0, 0, 0)
 
     ####################################################################################################################
     # Stats avec le calcul naïf
