@@ -7,7 +7,10 @@ import matplotlib.pyplot as plt
 def main():
     ####################################################################################################################
     # Traitement des fichiers d'acquisition continues
-    CSI = continuous.CSI("setup/03-03-2021_grosse_chambre_Thibaut/shorten_continuous.npy")
+    # CSI = process.CSI("setup/03-03-2021_grosse_chambre_Philibert/continuous")
+    # CSI.shorten_continuous_file("setup/03-03-2021_grosse_chambre_Philibert/shorten_continuous")
+
+    CSI = continuous.CSI("setup/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
     CSI.plot_DoA(0, 0, 0)
 
     ####################################################################################################################
