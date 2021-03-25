@@ -6,45 +6,58 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def main():
-    # MMP technique
-    no_docs = len([doc for doc in os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut") if "continuous" not in doc])
-    data = np.zeros(shape=(no_docs, 2))
+    ####################################################################################################################
+    # Technique MMP pour les acquisitions continues
+    CSI = continuous.CSI("acquisitions/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
+    data = CSI.get_raw_data()
 
-    for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
-        if "continuous" not in doc:
-            print(doc)
-            CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
-            data[idx] = np.array([int(doc), CSI.aggregation_MMP()[0]])
+    DoAs = np.zeros(shape=(data.shape[0], 2))
 
-    print(data)
-
-    x = np.array([-90, 90])
+    for paquet in range(data.shape[0]):
+        print(paquet/data.shape[0]*100)
+        DoAs[paquet] = np.array([paquet, CSI.DoA_MMP(paquet, 7e-2)[0]])
 
     plt.figure()
-    plt.title("acquisitions/03-03-2021_grosse_chambre_Thibaut")
-    plt.xlabel("Expected DoA (°)")
-    plt.ylabel("Calculated DoA (°)")
-    plt.plot(x, x, 'r')
-    plt.plot(data[:, 0], data[:, 1], '+')
+    plt.plot(DoAs[:, 0], DoAs[:, 1], '+')
     plt.show()
 
+    ####################################################################################################################
+    # # Technique MMP pour les acquisitions discrètes
+    # no_docs = len([doc for doc in os.listdir("acquisitions/03-03-2021_grosse_chambre_Philibert") if "continuous" not in doc])
+    # data = np.zeros(shape=(no_docs, 2))
+    #
+    # for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Philibert")):
+    #     if "continuous" not in doc:
+    #         print(doc)
+    #         CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Philibert/" + doc)
+    #         data[idx] = np.array([int(doc), CSI.aggregation_MMP(7e-2)[0]])
+    #
+    # x = np.array([-90, 90])
+    #
+    # plt.figure()
+    # plt.title("acquisitions/03-03-2021_grosse_chambre_Philibert")
+    # plt.xlabel("Expected DoA (°)")
+    # plt.ylabel("Calculated DoA (°)")
+    # plt.plot(x, x, 'r')
+    # plt.plot(data[:, 0], data[:, 1], '+')
+    # plt.show()
 
     ####################################################################################################################
     # Traitement des fichiers d'acquisition continues
-    # CSI = process.CSI("setup/03-03-2021_grosse_chambre_Philibert/continuous")
-    # CSI.shorten_continuous_file("setup/03-03-2021_grosse_chambre_Philibert/shorten_continuous")
+    # CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Philibert/continuous")
+    # CSI.shorten_continuous_file("acquisitions/03-03-2021_grosse_chambre_Philibert/shorten_continuous")
 
-    # CSI = continuous.CSI("setup/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
+    # CSI = continuous.CSI("acquisitions/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
     # CSI.plot_DoA(0, 0, 0)
 
     ####################################################################################################################
     # Stats avec le calcul naïf
     # thetas = {}
-    # for doc in os.listdir("setup/03-03-2021_grosse_chambre_Thibaut"):
+    # for doc in os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut"):
     #     if doc != "continuous":
     #         thetas[doc] = {}
     #         print(doc)
-    #         CSI = process.CSI("setup/03-03-2021_grosse_chambre_Thibaut/" + doc)
+    #         CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
     #         info = CSI.raw_calculus()
     #         thetas[doc]["mean_theta"] = info[0]
     #         thetas[doc]["std_err"] = info[1]
@@ -91,10 +104,10 @@ def main():
     # measures = []
     # expMeasures = []
     #
-    # for doc in os.listdir("setup/1tx_3rx"):
+    # for doc in os.listdir("acquisitions/1tx_3rx"):
     #     print(doc)
     #     expMeasures.append(float(doc))
-    #     CSI = process.CSI("setup/1tx_3rx/" + doc)
+    #     CSI = process.CSI("acquisitions/1tx_3rx/" + doc)
     #     measures.append(CSI.pseudo_spectrum()[-1])
     #
     # plt.figure()
