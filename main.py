@@ -6,36 +6,54 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def main():
+
+
     ####################################################################################################################
-    # Technique MMP pour les acquisitions continues
-    CSI = continuous.CSI("acquisitions/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
-    data = CSI.get_raw_data()
+    # Tentative ToF avec MMP
+    # CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/-10")
+    # data = CSI.get_raw_data()
+    #
+    # tofs = np.zeros(shape=(data.shape[0], 2))
+    #
+    # for paquet in range(data.shape[0]):
+    #     tofs[paquet] = CSI.ToF_MMP(paquet)
+    #
+    # print(tofs)
 
-    DoAs = np.zeros(shape=(data.shape[0], 2))
 
-    for paquet in range(data.shape[0]):
-        print(paquet/data.shape[0]*100)
-        DoAs[paquet] = np.array([paquet, CSI.DoA_MMP(paquet, 7e-2)[0]])
-
-    plt.figure()
-    plt.plot(DoAs[:, 0], DoAs[:, 1], '+')
-    plt.show()
+    ####################################################################################################################
+    # # Technique MMP pour les acquisitions continues
+    # CSI = continuous.CSI("acquisitions/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
+    # data = CSI.get_raw_data()
+    #
+    # DoAs = np.zeros(shape=(data.shape[0], 2))
+    #
+    # for paquet in range(data.shape[0]):
+    #     print(paquet/data.shape[0]*100)
+    #     DoAs[paquet] = np.array([paquet, CSI.DoA_MMP(paquet, 7.8e-2)[0]])
+    #
+    # plt.figure()
+    # plt.title("acquisitions/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
+    # plt.xlabel("Paquet (Vision temporelle)")
+    # plt.ylabel("DoA (°)")
+    # plt.plot(DoAs[:, 0], DoAs[:, 1], '+')
+    # plt.show()
 
     ####################################################################################################################
     # # Technique MMP pour les acquisitions discrètes
-    # no_docs = len([doc for doc in os.listdir("acquisitions/03-03-2021_grosse_chambre_Philibert") if "continuous" not in doc])
+    # no_docs = len([doc for doc in os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut") if "continuous" not in doc])
     # data = np.zeros(shape=(no_docs, 2))
     #
-    # for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Philibert")):
+    # for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
     #     if "continuous" not in doc:
     #         print(doc)
-    #         CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Philibert/" + doc)
-    #         data[idx] = np.array([int(doc), CSI.aggregation_MMP(7e-2)[0]])
+    #         CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
+    #         data[idx] = np.array([int(doc), CSI.aggregation_MMP(2.7e-2)[0]])
     #
     # x = np.array([-90, 90])
     #
     # plt.figure()
-    # plt.title("acquisitions/03-03-2021_grosse_chambre_Philibert")
+    # plt.title("acquisitions/03-03-2021_grosse_chambre_Thibaut")
     # plt.xlabel("Expected DoA (°)")
     # plt.ylabel("Calculated DoA (°)")
     # plt.plot(x, x, 'r')

@@ -458,7 +458,7 @@ class CSI:
 
         return thetas
 
-    def aggregation_MMP(self, d_antenne):
+    def aggregation_DoA_MMP(self, d_antenne):
         """Aggregation de paquets pour un meilleur SNR et une mesure plus sûre"""
         res = self.get_raw_data()
         m = self.params["Nsubcarriers"]*3 // 2
@@ -483,3 +483,38 @@ class CSI:
         thetas = 180 / np.pi * np.unwrap((np.arcsin(-long_onde * np.angle(eigvals) / (2 * np.pi * d_antenne))))
 
         return thetas
+
+    def permutation_ToF(self):
+        m = self.params["Nsubcarriers"]//2
+        P = np.zeros(shape=(2 * m, 2 * m))
+
+        for i in range(P.shape[0]):
+            if i % 2 == 0:
+                P[i, int(i/2) + m] = 1
+            else:
+                P[i, int((i + 1) / 2)] = 1
+
+        return(P)
+
+    def ToF_MMP(self, paquet):
+        """Méthode de calcul du ToF pour un paquet précis"""
+        Ce = self.Ce_matrix(paquet)
+        delta = 40e6 / self.params["Nsubcarriers"] #Écart de fréquence entre 2 sous-porteuses
+
+        U, _, _ = np.linalg.svd(Ce)
+        Us = U[:, :2]
+
+        P = self.permutation_ToF()
+
+        Us_hat = P @ Us
+        Us_hat = Us_hat[2: -2]
+
+        Us_hat_1 = Us_hat[:Us_hat.shape[0]//2]
+        Us_hat_2 = Us_hat[Us_hat.shape[0]//2:]
+
+        M = np.linalg.pinv(Us_hat_1) @ Us_hat_2
+        eigvals, _ = np.linalg.eig(M)
+
+        tofs = np.angle(eigvals) / (-2*np.pi*delta)
+
+        return tofs
