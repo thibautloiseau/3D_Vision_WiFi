@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import fsolve
 
 class CSI:
 
@@ -9,7 +8,7 @@ class CSI:
         self.ENDIANESS = 'big'
         self.params = {
             'Nrx': 3,
-            'Ntx': 1,
+            'Ntx': 3,
             'Nsubcarriers': 114,
         }
 
@@ -411,26 +410,30 @@ class CSI:
         """Création de la matrice Ce à partir d'un seul paquet"""
         res = self.get_raw_data()[paquet]
 
-        m = self.params["Nsubcarriers"] // 2 # Nombre de lignes des sous-matrices
-        r = self.params["Nsubcarriers"] // 2 + 1 # Nombre de colonnes des sous-matrices
+        m = self.params["Nsubcarriers"] // 2  # Nombre de lignes des sous-matrices
+        r = self.params["Nsubcarriers"] // 2 + 1  # Nombre de colonnes des sous-matrices
 
-        # On récupère les CSI de chaque antenne
-        c1 = np.reshape(res[0].T, (res[0].T.shape[0]*res[0].T.shape[1]))
-        c2 = np.reshape(res[1].T, (res[1].T.shape[0]*res[1].T.shape[1]))
-        c3 = np.reshape(res[2].T, (res[2].T.shape[0]*res[2].T.shape[1]))
+        #On crée Ntx différentes matrices Ce, une pour chaque antenne à l'émission
+        Ce = np.zeros(shape=(self.params["Ntx"], 2*m, 2*r), dtype=complex)
 
-        # On initialise les matrices composantes de Ce
-        C1 = np.zeros(shape=(m, r), dtype=complex)
-        C2 = np.zeros(shape=(m, r), dtype=complex)
-        C3 = np.zeros(shape=(m, r), dtype=complex)
+        for tx in range(res.shape[1]):
+            temp_res = res[:, tx, :]
 
-        # On remplit les matrices que l'on vient d'initialiser
-        for i in range(m):
-            C1[i] = c1[i: i+r]
-            C2[i] = c2[i: i+r]
-            C3[i] = c3[i: i+r]
+            c1 = temp_res[0]
+            c2 = temp_res[1]
+            c3 = temp_res[2]
 
-        Ce = np.concatenate((np.concatenate((C1, C2), axis=1), np.concatenate((C2, C3), axis=1)))
+            C1 = np.zeros(shape=(m, r), dtype=complex)
+            C2 = np.zeros(shape=(m, r), dtype=complex)
+            C3 = np.zeros(shape=(m, r), dtype=complex)
+
+            for i in range(m):
+                C1[i] = c1[i: i + r]
+                C2[i] = c2[i: i + r]
+                C3[i] = c3[i: i + r]
+
+            temp_Ce = np.concatenate((np.concatenate((C1, C2), axis=1), np.concatenate((C2, C3), axis=1)))
+            Ce[tx] = temp_Ce
 
         return Ce
 
@@ -440,21 +443,25 @@ class CSI:
         m = self.params["Nsubcarriers"]//2
         long_onde = 2.99792e8/5805e6 # c/f
 
-        U, _, _ = np.linalg.svd(Ce) # Les valeurs et vecteurs singuliers sont classés par ordre décroissant
+        thetas = np.zeros(shape=(Ce.shape[0], 2))
 
-        # On décompose U en deux matrices, une Us qui comprend les deux vecteurs correspondant aux deux valeurs singulières les plus grandes, l'autre Uv qui comprend le reste
-        # On ne considère que Us pour les calculs
-        Us = U[:, :2]
+        for tx in range(Ce.shape[0]):
+            U, _, _ = np.linalg.svd(Ce[tx]) # Les valeurs et vecteurs singuliers sont classés par ordre décroissant
 
-        # On redécompose Us en Us1 et Us2 avec rang(Us1) = 2, le nombre de DoA que l'on veut distinguer
-        Us1 = Us[m:, :]
-        Us2 = Us[:m, :]
+            # On décompose U en deux matrices, une Us qui comprend les deux vecteurs correspondant aux deux valeurs singulières les plus grandes, l'autre Uv qui comprend le reste
+            # On ne considère que Us pour les calculs
+            Us = U[:, :2]
 
-        # On écrit notre matrice qui correspondra au sous-espace signal et on calcule les valeurs propres
-        M = np.linalg.pinv(Us1) @ Us2
-        eigvals, _ = np.linalg.eig(M)
+            # On redécompose Us en Us1 et Us2 avec rang(Us1) = 2, le nombre de DoA que l'on veut distinguer
+            Us1 = Us[m:, :]
+            Us2 = Us[:m, :]
 
-        thetas = 180/np.pi * np.unwrap((np.arcsin(-long_onde*np.angle(eigvals) / (2*np.pi*d_antenne))))
+            # On écrit notre matrice qui correspondra au sous-espace signal et on calcule les valeurs propres
+            M = np.linalg.pinv(Us1) @ Us2
+            eigvals, _ = np.linalg.eig(M)
+
+            temp_thetas = 180/np.pi * np.unwrap((np.arcsin(-long_onde*np.angle(eigvals) / (2*np.pi*d_antenne))))
+            thetas[tx] = temp_thetas
 
         return thetas
 
@@ -464,26 +471,30 @@ class CSI:
         m = self.params["Nsubcarriers"]*3 // 2
         long_onde = 2.99792e8 / 5805e6  # c/f
 
-        aggregate_csi = np.zeros(shape=(self.params["Nsubcarriers"] * 3, res.shape[0]), dtype=complex)
+        thetas = np.zeros(shape=(self.params["Ntx"], 2))
 
-        for i in range(res.shape[0]):
-            aggregate_csi[:, i] = np.reshape(res[i], (res[i].shape[2]*3))
+        for tx in range(self.params["Ntx"]):
+            aggregate_csi = np.zeros(shape=(self.params["Nsubcarriers"] * 3, res.shape[0]), dtype=complex)
 
-        U, _, _ = np.linalg.svd(aggregate_csi)
+            for i in range(res.shape[0]):
+                aggregate_csi[:, i] = np.reshape(res[i, :, tx, :], (res[i].shape[2]*3))
 
-        Us = U[:, :2]
+            U, _, _ = np.linalg.svd(aggregate_csi)
 
-        Us1 = Us[m:, :]
-        Us2 = Us[:m, :]
+            Us = U[:, :2]
 
-        # On écrit notre matrice qui correspondra au sous-espace signal et on calcule les valeurs propres
-        M = np.linalg.pinv(Us1) @ Us2
-        eigvals, _ = np.linalg.eig(M)
+            Us1 = Us[m:, :]
+            Us2 = Us[:m, :]
 
-        thetas = 180 / np.pi * np.unwrap((np.arcsin(-long_onde * np.angle(eigvals) / (2 * np.pi * d_antenne))))
+            # On écrit notre matrice qui correspondra au sous-espace signal et on calcule les valeurs propres
+            M = np.linalg.pinv(Us1) @ Us2
+            eigvals, _ = np.linalg.eig(M)
+
+            thetas[tx] = 180 / np.pi * np.unwrap((np.arcsin(-long_onde * np.angle(eigvals) / (2 * np.pi * d_antenne))))
 
         return thetas
 
+    # Tentative de calcul des ToF avec MMP
     def permutation_ToF(self):
         m = self.params["Nsubcarriers"]//2
         P = np.zeros(shape=(2 * m, 2 * m))

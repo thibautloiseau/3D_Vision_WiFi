@@ -4,9 +4,15 @@ import continuous_csi as continuous
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+import reflecteur
 
 def main():
-
+    ####################################################################################################################
+    # MMP avec réflecteur
+    CSI = reflecteur.reflecteur("acquisitions/petite_chambre/L1_155_H_75_25send", "acquisitions/petite_chambre/L1_155_H_75_27send")
+    # print(CSI.CSI1.aggregation_DoA_MMP(2.7e-2))
+    # print(CSI.CSI2.aggregation_DoA_MMP(2.7e-2))
+    CSI.plot()
 
     ####################################################################################################################
     # Tentative ToF avec MMP
@@ -20,10 +26,11 @@ def main():
     #
     # print(tofs)
 
-
     ####################################################################################################################
     # # Technique MMP pour les acquisitions continues
-    # CSI = continuous.CSI("acquisitions/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
+    # CSI = continuous.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/shorten_continuous.npy")
+    # CSI.params["Ntx"] = 1
+    #
     # data = CSI.get_raw_data()
     #
     # DoAs = np.zeros(shape=(data.shape[0], 2))
@@ -33,14 +40,14 @@ def main():
     #     DoAs[paquet] = np.array([paquet, CSI.DoA_MMP(paquet, 7.8e-2)[0]])
     #
     # plt.figure()
-    # plt.title("acquisitions/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
+    # plt.title("acquisitions/03-03-2021_grosse_chambre_Thibaut/shorten_continuous.npy")
     # plt.xlabel("Paquet (Vision temporelle)")
     # plt.ylabel("DoA (°)")
     # plt.plot(DoAs[:, 0], DoAs[:, 1], '+')
     # plt.show()
 
     ####################################################################################################################
-    # # Technique MMP pour les acquisitions discrètes
+    # Technique MMP pour les acquisitions discrètes
     # no_docs = len([doc for doc in os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut") if "continuous" not in doc])
     # data = np.zeros(shape=(no_docs, 2))
     #
@@ -48,7 +55,8 @@ def main():
     #     if "continuous" not in doc:
     #         print(doc)
     #         CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
-    #         data[idx] = np.array([int(doc), CSI.aggregation_MMP(2.7e-2)[0]])
+    #         CSI.params["Ntx"] = 1
+    #         data[idx] = np.array([int(doc), CSI.aggregation_DoA_MMP(2.7e-2)[0, 0]])
     #
     # x = np.array([-90, 90])
     #
