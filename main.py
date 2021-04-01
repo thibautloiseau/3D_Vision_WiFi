@@ -9,26 +9,32 @@ import reflecteur
 def main():
     ####################################################################################################################
     # MMP avec réflecteur
-    CSI = reflecteur.reflecteur("acquisitions/petite_chambre/L1_155_H_75_25send", "acquisitions/petite_chambre/L1_155_H_75_27send")
-    # print(CSI.CSI1.aggregation_DoA_MMP(2.7e-2))
-    # print(CSI.CSI2.aggregation_DoA_MMP(2.7e-2))
-    CSI.plot()
+    # CSI = reflecteur.reflecteur("acquisitions/petite_chambre/L1_155_H_75_25send", "acquisitions/petite_chambre/L1_155_H_75_27send")
+    # data = CSI.CSI1.get_raw_data()
+    #
+    # for paquet in range(data.shape[0]):
+    #     print(CSI.CSI1.DoA_MMP(paquet, 2.7e2))
+    #
+    # CSI.plot()
 
     ####################################################################################################################
     # Tentative ToF avec MMP
     # CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/-10")
+    # CSI.params["Ntx"] = 1
     # data = CSI.get_raw_data()
     #
     # tofs = np.zeros(shape=(data.shape[0], 2))
+    # doa = np.zeros(shape=(data.shape[0], 2))
     #
     # for paquet in range(data.shape[0]):
+    #     print(paquet)
     #     tofs[paquet] = CSI.ToF_MMP(paquet)
-    #
-    # print(tofs)
+    #     doa[paquet] = CSI.DoA_MMP(paquet, 2.7e-2)
+        # print(tofs[paquet]*2.997e8)
 
     ####################################################################################################################
     # # Technique MMP pour les acquisitions continues
-    # CSI = continuous.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/shorten_continuous.npy")
+    # CSI = continuous.CSI("acquisitions/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
     # CSI.params["Ntx"] = 1
     #
     # data = CSI.get_raw_data()
@@ -40,7 +46,7 @@ def main():
     #     DoAs[paquet] = np.array([paquet, CSI.DoA_MMP(paquet, 7.8e-2)[0]])
     #
     # plt.figure()
-    # plt.title("acquisitions/03-03-2021_grosse_chambre_Thibaut/shorten_continuous.npy")
+    # plt.title("acquisitions/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
     # plt.xlabel("Paquet (Vision temporelle)")
     # plt.ylabel("DoA (°)")
     # plt.plot(DoAs[:, 0], DoAs[:, 1], '+')
@@ -48,31 +54,31 @@ def main():
 
     ####################################################################################################################
     # Technique MMP pour les acquisitions discrètes
-    # no_docs = len([doc for doc in os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut") if "continuous" not in doc])
-    # data = np.zeros(shape=(no_docs, 2))
-    #
-    # for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
-    #     if "continuous" not in doc:
-    #         print(doc)
-    #         CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
-    #         CSI.params["Ntx"] = 1
-    #         data[idx] = np.array([int(doc), CSI.aggregation_DoA_MMP(2.7e-2)[0, 0]])
-    #
-    # x = np.array([-90, 90])
-    #
-    # plt.figure()
-    # plt.title("acquisitions/03-03-2021_grosse_chambre_Thibaut")
-    # plt.xlabel("Expected DoA (°)")
-    # plt.ylabel("Calculated DoA (°)")
-    # plt.plot(x, x, 'r')
-    # plt.plot(data[:, 0], data[:, 1], '+')
-    # plt.show()
+    no_docs = len([doc for doc in os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut") if "continuous" not in doc])
+    data = np.zeros(shape=(no_docs, 2))
+
+    for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
+        if "continuous" not in doc:
+            print(doc)
+            CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
+            CSI.params["Ntx"] = 1
+            data[idx] = np.array([int(doc), CSI.aggregation_DoA_MMP(2.7e-2)[0, 0]])
+
+    x = np.array([-90, 90])
+
+    plt.figure()
+    plt.title("acquisitions/03-03-2021_grosse_chambre_Thibaut")
+    plt.xlabel("Expected DoA (°)")
+    plt.ylabel("Calculated DoA (°)")
+    plt.plot(x, x, 'r')
+    plt.plot(data[:, 0], data[:, 1], '+')
+    plt.show()
 
     ####################################################################################################################
-    # Traitement des fichiers d'acquisition continues
+    # Raccourcicement des fichiers d'acquisitions continues
     # CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Philibert/continuous")
     # CSI.shorten_continuous_file("acquisitions/03-03-2021_grosse_chambre_Philibert/shorten_continuous")
-
+    #
     # CSI = continuous.CSI("acquisitions/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
     # CSI.plot_DoA(0, 0, 0)
 

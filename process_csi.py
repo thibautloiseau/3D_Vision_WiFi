@@ -458,9 +458,12 @@ class CSI:
 
             # On écrit notre matrice qui correspondra au sous-espace signal et on calcule les valeurs propres
             M = np.linalg.pinv(Us1) @ Us2
-            eigvals, _ = np.linalg.eig(M)
+            eigvals, eigvecs = np.linalg.eig(M)
+            print(eigvecs)
 
-            temp_thetas = 180/np.pi * np.unwrap((np.arcsin(-long_onde*np.angle(eigvals) / (2*np.pi*d_antenne))))
+            arg = -long_onde * np.angle(eigvals) / (2 * np.pi * d_antenne) % (long_onde/d_antenne)
+
+            temp_thetas = 180/np.pi * np.unwrap(np.arcsin(arg))
             thetas[tx] = temp_thetas
 
         return thetas
@@ -490,41 +493,51 @@ class CSI:
             M = np.linalg.pinv(Us1) @ Us2
             eigvals, _ = np.linalg.eig(M)
 
-            thetas[tx] = 180 / np.pi * np.unwrap((np.arcsin(-long_onde * np.angle(eigvals) / (2 * np.pi * d_antenne))))
+            thetas[tx] = 180 / np.pi * np.unwrap(np.arcsin(-long_onde * np.angle(eigvals) / (2 * np.pi * d_antenne)))
 
         return thetas
 
+    ####################################################################################################################
     # Tentative de calcul des ToF avec MMP
     def permutation_ToF(self):
+        """Définition de la matrice de permutation pour récupérer les ToFs"""
         m = self.params["Nsubcarriers"]//2
         P = np.zeros(shape=(2 * m, 2 * m))
 
+        # # Permutations sur les colonnes
+        # for j in range(P.shape[1]):
+        #     if j % 2 == 0:
+        #         P[int(j/2) + m, j] = 1
+        #     else:
+        #         P[int((j + 1) / 2), j] = 1
+
+        # Permutations sur les lignes
         for i in range(P.shape[0]):
             if i % 2 == 0:
                 P[i, int(i/2) + m] = 1
             else:
                 P[i, int((i + 1) / 2)] = 1
 
-        return(P)
+        return P
 
     def ToF_MMP(self, paquet):
         """Méthode de calcul du ToF pour un paquet précis"""
-        Ce = self.Ce_matrix(paquet)
-        delta = 40e6 / self.params["Nsubcarriers"] #Écart de fréquence entre 2 sous-porteuses
+        Ce = self.Ce_matrix(paquet)[0]
+        delta = 40e6 / (self.params["Nsubcarriers"] - 1) #Écart de fréquence entre 2 sous-porteuses
 
         U, _, _ = np.linalg.svd(Ce)
         Us = U[:, :2]
 
         P = self.permutation_ToF()
 
-        Us_hat = P @ Us
-        Us_hat = Us_hat[2: -2]
+        P_Us = P @ Us
 
-        Us_hat_1 = Us_hat[:Us_hat.shape[0]//2]
-        Us_hat_2 = Us_hat[Us_hat.shape[0]//2:]
+        Us_hat_1 = P_Us[:-2]
+        Us_hat_2 = P_Us[2:]
 
         M = np.linalg.pinv(Us_hat_1) @ Us_hat_2
-        eigvals, _ = np.linalg.eig(M)
+        eigvals, eigvecs = np.linalg.eig(M)
+        print(eigvecs)
 
         tofs = np.angle(eigvals) / (-2*np.pi*delta)
 

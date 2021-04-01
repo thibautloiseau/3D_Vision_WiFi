@@ -32,5 +32,3 @@ class reflecteur:
         plt.annotate("réflecteur", self.reflecteur)
         plt.show()
 
-
-
