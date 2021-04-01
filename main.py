@@ -7,6 +7,29 @@ import numpy as np
 import reflecteur
 
 def main():
+    CSI = process.CSI("acquisitions/01-04-2021_petite_chambre/LOS_H_190_L1_60_L_320_3")
+    print(CSI.path)
+    CSI.params["Ntx"] = 1
+    data = CSI.get_raw_data()
+    print(data.shape)
+
+    doa = np.zeros(shape=(25, 2))
+
+    for paquet in range(0, 25):
+        print(paquet)
+        # print(CSI.DoA_MMP(paquet, 2.7e-2))
+        doa[paquet] = CSI.DoA_MMP(paquet, 2.7e-2)[0]
+
+    plt.figure(1)
+    plt.plot(doa[:, 0], '+')
+    plt.show()
+
+    plt.figure(2)
+    plt.plot(doa[:, 1], '+')
+    plt.show()
+
+    print(CSI.aggregation_DoA_MMP(2.7e-2))
+
     ####################################################################################################################
     # MMP avec réflecteur
     # CSI = reflecteur.reflecteur("acquisitions/petite_chambre/L1_155_H_75_25send", "acquisitions/petite_chambre/L1_155_H_75_27send")
@@ -54,25 +77,25 @@ def main():
 
     ####################################################################################################################
     # Technique MMP pour les acquisitions discrètes
-    no_docs = len([doc for doc in os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut") if "continuous" not in doc])
-    data = np.zeros(shape=(no_docs, 2))
-
-    for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
-        if "continuous" not in doc:
-            print(doc)
-            CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
-            CSI.params["Ntx"] = 1
-            data[idx] = np.array([int(doc), CSI.aggregation_DoA_MMP(2.7e-2)[0, 0]])
-
-    x = np.array([-90, 90])
-
-    plt.figure()
-    plt.title("acquisitions/03-03-2021_grosse_chambre_Thibaut")
-    plt.xlabel("Expected DoA (°)")
-    plt.ylabel("Calculated DoA (°)")
-    plt.plot(x, x, 'r')
-    plt.plot(data[:, 0], data[:, 1], '+')
-    plt.show()
+    # no_docs = len([doc for doc in os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut") if "continuous" not in doc])
+    # data = np.zeros(shape=(no_docs, 2))
+    #
+    # for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
+    #     if "continuous" not in doc:
+    #         print(doc)
+    #         CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
+    #         CSI.params["Ntx"] = 1
+    #         data[idx] = np.array([int(doc), CSI.aggregation_DoA_MMP(2.7e-2)[0, 0]])
+    #
+    # x = np.array([-90, 90])
+    #
+    # plt.figure()
+    # plt.title("acquisitions/03-03-2021_grosse_chambre_Thibaut")
+    # plt.xlabel("Expected DoA (°)")
+    # plt.ylabel("Calculated DoA (°)")
+    # plt.plot(x, x, 'r')
+    # plt.plot(data[:, 0], data[:, 1], '+')
+    # plt.show()
 
     ####################################################################################################################
     # Raccourcicement des fichiers d'acquisitions continues

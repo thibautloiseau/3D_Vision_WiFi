@@ -459,11 +459,9 @@ class CSI:
             # On écrit notre matrice qui correspondra au sous-espace signal et on calcule les valeurs propres
             M = np.linalg.pinv(Us1) @ Us2
             eigvals, eigvecs = np.linalg.eig(M)
-            print(eigvecs)
+            # print(eigvecs)
 
-            arg = -long_onde * np.angle(eigvals) / (2 * np.pi * d_antenne) % (long_onde/d_antenne)
-
-            temp_thetas = 180/np.pi * np.unwrap(np.arcsin(arg))
+            temp_thetas = 180/np.pi * np.unwrap(np.arcsin(-long_onde * np.angle(eigvals) / (2 * np.pi * d_antenne)))
             thetas[tx] = temp_thetas
 
         return thetas
