@@ -60,7 +60,7 @@ class CSI:
 
     ####################################################################################################################
     # Phase processing
-    def process_phase(self, rx, tx, subcarrier):
+    def process_phase(self):
         """Traiter la phase des CSI"""
         res = self.get_raw_phase()
 
@@ -73,17 +73,15 @@ class CSI:
                     intercept = np.mean(res[k, i, j, :])
                     corrected_phases[k, i, j] = res[k, i, j] - slope * np.array([i for i in range(res.shape[3])]) - intercept
 
-        corrected_phases = corrected_phases - corrected_phases[0, rx, tx, subcarrier]
-
         return np.unwrap(corrected_phases)
 
     ####################################################################################################################
     # Algorithmes MUSIC pour trouver les directions d'arrivée
 
-    def noise_subspaces(self, rx, tx, subcarrier):
+    def noise_subspaces(self):
         """Récupérer le sous-espace bruit pour chaque paquet"""
         amps = self.process_amp()
-        phases = self.process_phase(rx, tx, subcarrier)
+        phases = self.process_phase()
 
         proc_csi = amps * np.exp(1j * phases)
         noise_subspaces = np.zeros(shape=(proc_csi.shape[0], self.params['Nrx'], 2), dtype=complex)
@@ -93,7 +91,7 @@ class CSI:
             paquet = proc_csi[i]
             paquet = np.reshape(paquet, (paquet.shape[0] * paquet.shape[1], paquet.shape[2]))
 
-            Rx = np.dot(paquet, np.conj(paquet.T))
+            Rx = paquet @ np.conj(paquet.T)
 
             eigvals, eigvecs = np.linalg.eig(Rx)
 
@@ -106,34 +104,41 @@ class CSI:
 
         return noise_subspaces
 
-    def DoA(self, rx, tx, subcarrier):
+    def a(self, theta, d_antenne):
+        freq = 5805e6
+        c = 2.9972e8
+        return (np.array([np.power(np.exp(-1j * 2 * np.pi * freq * d_antenne * np.sin(theta) / c), k) for k in
+                          range(self.params["Nrx"])]))
+
+    def pseudo_spectrum(self, d_antenne):
         """Récupérer les pseudo-spectre issu de l'algorithme MUSIC pour chaque paquet"""
-        noise_subspaces = self.noise_subspaces(rx, tx, subcarrier)
-
-        omegas = np.linspace(-np.pi, np.pi, 360)
-        e_omegas = np.array([np.exp(1j * i * omegas) for i in range(noise_subspaces.shape[1])]).T
-
-        pseudo_spectrums = np.zeros(shape=(noise_subspaces.shape[0], e_omegas.shape[0]), dtype=complex)
+        noise_subspaces = self.noise_subspaces()
+        thetas = np.linspace(-np.pi, np.pi, 360)
+        pseudo_spectrums = np.zeros(shape=(noise_subspaces.shape[0], thetas.shape[0]))
         maximums = np.zeros(shape=(noise_subspaces.shape[0]))
 
         for i in range(noise_subspaces.shape[0]):
-            inv_spectrum = np.array([np.dot(
-                np.dot(np.dot(np.conj(e_omegas[j]), noise_subspaces[i]), np.conj(noise_subspaces[i]).T), e_omegas[j])
-                                     for j in range(e_omegas.shape[0])])
+            print(i)
+            pseudo_spectrum = np.zeros(shape=thetas.shape)
 
-            pseudo_spectrums[i] = np.reciprocal(np.abs(inv_spectrum))
-            maximums[i] = 180 / np.pi * omegas[np.argmax(pseudo_spectrums[i])]
+            for j in range(thetas.shape[0]):
+                pseudo_spectrum[j] = np.reciprocal(np.abs(
+                    np.conj(self.a(thetas[j], d_antenne)).T @ noise_subspaces[i] @ np.conj(
+                        noise_subspaces[i]).T @ self.a(thetas[j], d_antenne)))
+
+            pseudo_spectrums[i] = pseudo_spectrum
+
+            maximums[i] = 180 / np.pi * thetas[np.argmax(pseudo_spectrum)]
 
         return (maximums)
 
-    def plot_DoA(self, rx, tx, subcarrier):
-        res = np.unwrap(self.DoA(rx, tx, subcarrier))
+    def plot_pseudo_spectrum(self):
+        """Tracé du pseudo-spectre de l'algorithme MUSIC"""
+        pseudo_spectrum = self.pseudo_spectrum()
 
         plt.figure()
-        plt.title(self.path)
-        plt.xlabel("Paquets (Vision temporelle)")
-        plt.ylabel("DoA (°)")
-        plt.plot(res)
+        plt.title(self.path + "\nMaximum : " + str(pseudo_spectrum[2]) + "$\pm$" + str(pseudo_spectrum[3]))
+        plt.plot(180 / np.pi * pseudo_spectrum[0], pseudo_spectrum[1], '+')
         plt.show()
 
         return 0

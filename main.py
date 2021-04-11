@@ -7,28 +7,173 @@ import numpy as np
 import reflecteur
 
 def main():
-    CSI = process.CSI("acquisitions/01-04-2021_petite_chambre/LOS_H_190_L1_60_L_320_3")
-    print(CSI.path)
-    CSI.params["Ntx"] = 1
-    data = CSI.get_raw_data()
-    print(data.shape)
+    ####################################################################################################################
+    # Mesures continues MUSIC
+    CSI = continuous.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/shorten_continuous.npy")
+    thetas = CSI.pseudo_spectrum(2.7e-2)
 
-    doa = np.zeros(shape=(25, 2))
-
-    for paquet in range(0, 25):
-        print(paquet)
-        # print(CSI.DoA_MMP(paquet, 2.7e-2))
-        doa[paquet] = CSI.DoA_MMP(paquet, 2.7e-2)[0]
-
-    plt.figure(1)
-    plt.plot(doa[:, 0], '+')
+    plt.plot([i for i in range(len(thetas))], thetas, '+')
+    plt.xlabel("Paquet (Vision temporelle)")
+    plt.ylabel("DoA estimée par MUSIC (°)")
     plt.show()
 
-    plt.figure(2)
-    plt.plot(doa[:, 1], '+')
-    plt.show()
+    ####################################################################################################################
+    # Mesures continues MMP
+    # CSI = continuous.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/shorten_continuous.npy")
+    #
+    # no_acq = CSI.get_raw_data().shape[0]
+    # DoAs = np.zeros(shape=(no_acq, 2))
+    # print(DoAs.shape)
+    #
+    # for paquet in range(no_acq):
+    #     print(paquet)
+    #     DoAs[paquet] = [paquet, CSI.DoA_MMP(paquet, 2.7e-2)[0]]
+    #
+    # plt.plot(DoAs[:, 0], DoAs[:, 1], '+')
+    # plt.xlabel("Paquet (Vision temporelle)")
+    # plt.ylabel("DoA estimée par MMP (°)")
+    # plt.show()
 
-    print(CSI.aggregation_DoA_MMP(2.7e-2))
+    ####################################################################################################################
+    # Traitement stats discrètes MMP
+
+    # with open('mmp_discrete.json', 'r') as f:
+    #     data = json.load(f)
+    #
+    # stats_mmp = np.zeros(shape=(len(data.keys()), 3))
+    #
+    # for idx, true_angle in enumerate(data.keys()):
+    #     stats_mmp[idx] = [int(true_angle), np.mean(data[true_angle]['1']), np.std(data[true_angle]['1'])]
+    #
+    # plt.errorbar(stats_mmp[:, 0], stats_mmp[:, 1], yerr=stats_mmp[:, 2], ecolor='r', fmt='bo', label='MMP')
+    # plt.plot(stats_mmp[:, 0], stats_mmp[:, 0], 'g', label='Valeurs attendues')
+    #
+    # plt.legend(loc='upper right')
+    # plt.xlabel('AoA attendue (°)')
+    # plt.ylabel('AoA estimée avec MMP (°)')
+    #
+    # print(stats_mmp)
+    #
+    # plt.show()
+
+    # Agregation
+    # no_files = len([csi for csi in os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut") if 'continuous' not in csi])
+    # stats_mmp_agr = np.zeros(shape=(no_files, 2))
+    #
+    # for idx, csi in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
+    #     if 'continuous' not in csi:
+    #         print(csi)
+    #         CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + csi)
+    #         stats_mmp_agr[idx] = [int(csi), CSI.aggregation_DoA_MMP(2.7e-2)[0, 0]]
+    #
+    # plt.plot(stats_mmp_agr[:, 0], stats_mmp_agr[:, 1], 'b+', label='MMP')
+    # plt.plot([-80, 80], [-80, 80], 'r-', label='Valeurs attendues')
+    # plt.legend(loc='upper right')
+    # plt.xlabel('AoA attendue (°)')
+    # plt.ylabel('AoA estimée avec MMP (°)')
+    # plt.show()
+
+    ####################################################################################################################
+    # Mesures MMP, acquisitions discrètes
+    # dico_mmp = {}
+    #
+    # for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
+    #     if "continuous" not in doc:
+    #         print(doc)
+    #         CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
+    #         no_acq = CSI.get_raw_data().shape[0]
+    #
+    #         dico_mmp[doc] = {}
+    #
+    #         thetas_1 = np.zeros(shape=no_acq)
+    #         thetas_2 = np.zeros(shape=no_acq)
+    #
+    #         for paquet in range(no_acq):
+    #             print('\t' + str(paquet))
+    #             thetas = CSI.DoA_MMP(paquet, 2.7e-2)[0]
+    #             thetas_1[paquet] = thetas[0]
+    #             thetas_2[paquet] = thetas[1]
+    #
+    #         dico_mmp[doc]['1'] = thetas_1.tolist()
+    #         dico_mmp[doc]['2'] = thetas_2.tolist()
+    #
+    #         with open('mmp_discrete.json', 'r+') as fp:
+    #             json.dump(dico_mmp, fp, indent=2)
+
+    ####################################################################################################################
+    # Traitement stats discrètes MUSIC
+
+    # with open('music_discrete.json', 'r') as f:
+    #     data = json.load(f)
+    #
+    # stats_music = np.zeros(shape=(len(data.keys()), 3))
+    #
+    # for idx, true_angle in enumerate(data.keys()):
+    #     stats_music[idx] = [int(true_angle), np.mean(data[true_angle]), np.std(data[true_angle])]
+    #
+    # plt.errorbar(stats_music[:, 0 ], stats_music[:, 1], yerr=stats_music[:, 2], ecolor='r', fmt='bo', label='MUSIC')
+    # plt.plot([-80, 80], [-80, 80], 'g', label='Valeurs attendues')
+    #
+    # plt.legend()
+    # plt.xlabel('AoA attendue (°)')
+    # plt.ylabel('AoA estimée avec MUSIC (°)')
+    #
+    # plt.show()
+
+    ####################################################################################################################
+    # Mesures MUSIC, acquisitions discrètes
+    # dico_music = {}
+    #
+    # for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
+    #     if "continuous" not in doc:
+    #         print(doc)
+    #         CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
+    #         dico_music[doc] = CSI.pseudo_spectrum(2.7e-2).tolist()
+    #
+    #         with open('music_discrete.json', 'w') as fp:
+    #             json.dump(dico_music, fp, indent=2)
+
+    ####################################################################################################################
+
+    # Traitement des amplitudes
+    # CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/0")
+    # CSI.params["Ntx"] = 1
+    #
+    # CSI.plot_raw_amp()
+    # CSI.plot_processed_amp()
+
+    # Traitement des phases
+    # CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/0")
+    # CSI.params["Ntx"] = 1
+    #
+    # CSI.plot_raw_phase()
+    # CSI.plot_processed_phase(0, 0, 0)
+
+
+    ####################################################################################################################
+    # Acquisitions en chambre avec réflecteur 1TX / 3RX
+    # CSI = process.CSI("acquisitions/01-04-2021_petite_chambre/LOS_H_190_L1_60_L_320_1")
+    # print(CSI.path)
+    # CSI.params["Ntx"] = 1
+    # data = CSI.get_raw_data()
+    # print(data.shape)
+    #
+    # doa = np.zeros(shape=(data.shape[0], 2))
+    #
+    # for paquet in range(data.shape[0]):
+    #     print(paquet)
+    #     # print(CSI.DoA_MMP(paquet, 2.7e-2))
+    #     doa[paquet] = CSI.DoA_MMP(paquet, 2.7e-2)[0]
+    #
+    # plt.figure(1)
+    # plt.plot(doa[:, 0], '+')
+    # plt.show()
+    #
+    # plt.figure(2)
+    # plt.plot(doa[:, 1], '+')
+    # plt.show()
+    #
+    # print(CSI.aggregation_DoA_MMP(2.7e-2))
 
     ####################################################################################################################
     # MMP avec réflecteur
@@ -54,48 +199,6 @@ def main():
     #     tofs[paquet] = CSI.ToF_MMP(paquet)
     #     doa[paquet] = CSI.DoA_MMP(paquet, 2.7e-2)
         # print(tofs[paquet]*2.997e8)
-
-    ####################################################################################################################
-    # # Technique MMP pour les acquisitions continues
-    # CSI = continuous.CSI("acquisitions/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
-    # CSI.params["Ntx"] = 1
-    #
-    # data = CSI.get_raw_data()
-    #
-    # DoAs = np.zeros(shape=(data.shape[0], 2))
-    #
-    # for paquet in range(data.shape[0]):
-    #     print(paquet/data.shape[0]*100)
-    #     DoAs[paquet] = np.array([paquet, CSI.DoA_MMP(paquet, 7.8e-2)[0]])
-    #
-    # plt.figure()
-    # plt.title("acquisitions/03-03-2021_grosse_chambre_Philibert/shorten_continuous.npy")
-    # plt.xlabel("Paquet (Vision temporelle)")
-    # plt.ylabel("DoA (°)")
-    # plt.plot(DoAs[:, 0], DoAs[:, 1], '+')
-    # plt.show()
-
-    ####################################################################################################################
-    # Technique MMP pour les acquisitions discrètes
-    # no_docs = len([doc for doc in os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut") if "continuous" not in doc])
-    # data = np.zeros(shape=(no_docs, 2))
-    #
-    # for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
-    #     if "continuous" not in doc:
-    #         print(doc)
-    #         CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
-    #         CSI.params["Ntx"] = 1
-    #         data[idx] = np.array([int(doc), CSI.aggregation_DoA_MMP(2.7e-2)[0, 0]])
-    #
-    # x = np.array([-90, 90])
-    #
-    # plt.figure()
-    # plt.title("acquisitions/03-03-2021_grosse_chambre_Thibaut")
-    # plt.xlabel("Expected DoA (°)")
-    # plt.ylabel("Calculated DoA (°)")
-    # plt.plot(x, x, 'r')
-    # plt.plot(data[:, 0], data[:, 1], '+')
-    # plt.show()
 
     ####################################################################################################################
     # Raccourcicement des fichiers d'acquisitions continues

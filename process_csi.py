@@ -8,7 +8,7 @@ class CSI:
         self.ENDIANESS = 'big'
         self.params = {
             'Nrx': 3,
-            'Ntx': 3,
+            'Ntx': 1,
             'Nsubcarriers': 114,
         }
 
@@ -115,11 +115,12 @@ class CSI:
         res = self.get_raw_amp()
 
         res = np.reshape(res, (res.shape[0], res.shape[1] * res.shape[2] * res.shape[3]))
+        res = res[:, :114]
 
         plt.figure()
         plt.plot(res.T)
-        plt.title("Raw Amplitude")
-        plt.xlabel('Subcarrier')
+        # plt.title("Amplitude brute")
+        plt.xlabel('Sous-porteuse')
         plt.ylabel('Amplitude')
         plt.show()
 
@@ -130,11 +131,13 @@ class CSI:
         res = self.get_raw_phase()
 
         res = np.reshape(res, (res.shape[0], res.shape[1] * res.shape[2] * res.shape[3]))
+        res = res[:, :114]
 
         plt.figure()
         plt.plot(res.T)
-        plt.title("Raw Phase")
-        plt.xlabel('Subcarrier')
+        # plt.title("Raw Phase")
+        plt.ylim(-6, 6)
+        plt.xlabel('Sous-porteuse')
         plt.ylabel('Phase')
         plt.show()
 
@@ -204,11 +207,12 @@ class CSI:
         res = self.process_amp()
 
         res = np.reshape(res, (res.shape[0], res.shape[1] * res.shape[2] * res.shape[3]))
+        res = res[:, :114]
 
         plt.figure()
         plt.plot(res.T)
-        plt.title("Processed amplitude")
-        plt.xlabel('Subcarrier')
+        # plt.title("Amplitude assainie")
+        plt.xlabel('Sous-porteuse')
         plt.ylabel('Amplitude')
         plt.show()
 
@@ -216,7 +220,7 @@ class CSI:
 
     ####################################################################################################################
     # Phase processing
-    def process_phase(self, rx, tx, subcarrier):
+    def process_phase(self):
         """Traiter la phase des CSI"""
         res = self.get_raw_phase()
 
@@ -225,34 +229,36 @@ class CSI:
         for k in range(res.shape[0]):
             for i in range(res.shape[1]):
                 for j in range(res.shape[2]):
-                    slope = (res[k, i, j, -1] - res[k, i, j, 0]) / (res.shape[3] - 1)
+                    slope = (res[k, i, j, -1] - res[k, i, j, 0]) / (2*np.pi*(res.shape[3] - 1))
                     intercept = np.mean(res[k, i, j, :])
                     corrected_phases[k, i, j] = res[k, i, j] - slope * np.array([i for i in range(res.shape[3])]) - intercept
 
-        corrected_phases = corrected_phases - corrected_phases[0, rx, tx, subcarrier]
+        corrected_phases = corrected_phases
 
         return np.unwrap(corrected_phases)
 
-    def plot_processed_phase(self, rx, tx, subcarrier):
+    def plot_processed_phase(self):
         """Tracer la phase corrigée"""
-        res = self.process_phase(rx, tx, subcarrier)
+        res = self.process_phase()
 
         res = np.reshape(res, (res.shape[0], res.shape[1] * res.shape[2] * res.shape[3]))
+        res = res[:, :114]
 
         plt.figure()
         plt.plot(res.T)
-        plt.title("Processed phase")
-        plt.xlabel('Subcarrier')
+        plt.ylim(-6, 6)
+        # plt.title("Processed phase")
+        plt.xlabel('Sous-porteuse')
         plt.ylabel('Phase')
         plt.show()
 
         return 0
 
-    def plot_processed_phase_evolution(self, rx, tx, subcarrier):
+    def plot_processed_phase_evolution(self):
         """Tracer l'évolution temporelle de la phase corrigée"""
-        res = self.process_phase(rx, tx, subcarrier)
+        res = self.process_phase()
 
-        corrected_phase = res[:, rx, tx, subcarrier]
+        corrected_phase = res[:]
 
         plt.figure()
         plt.title("Évolution de la phase corrigée \n" + self.path)
@@ -310,10 +316,10 @@ class CSI:
     ####################################################################################################################
     # Algorithmes MUSIC pour trouver les directions d'arrivée
 
-    def noise_subspaces(self, rx, tx, subcarrier):
+    def noise_subspaces(self):
         """Récupérer le sous-espace bruit pour chaque paquet"""
         amps = self.process_amp()
-        phases = self.process_phase(rx, tx, subcarrier)
+        phases = self.process_phase()
 
         proc_csi = amps * np.exp(1j * phases)
         noise_subspaces = np.zeros(shape=(proc_csi.shape[0], self.params['Nrx'], 2), dtype=complex)
@@ -323,7 +329,7 @@ class CSI:
             paquet = proc_csi[i]
             paquet = np.reshape(paquet, (paquet.shape[0] * paquet.shape[1], paquet.shape[2]))
 
-            Rx = np.dot(paquet, np.conj(paquet.T))
+            Rx = paquet @ np.conj(paquet.T)
 
             eigvals, eigvecs = np.linalg.eig(Rx)
 
@@ -336,32 +342,34 @@ class CSI:
 
         return noise_subspaces
 
-    def pseudo_spectrum(self, rx, tx, subcarrier):
+    def a(self, theta, d_antenne):
+        freq = 5805e6
+        c = 2.9972e8
+        return(np.array([np.power(np.exp(-1j * 2 * np.pi * freq * d_antenne * np.sin(theta) / c), k) for k in range(self.params["Nrx"])]))
+
+    def pseudo_spectrum(self, d_antenne):
         """Récupérer les pseudo-spectre issu de l'algorithme MUSIC pour chaque paquet"""
-        noise_subspaces = self.noise_subspaces(rx, tx, subcarrier)
-
-        omegas = np.linspace(-np.pi, np.pi, 360)
-        e_omegas = np.array([np.exp(1j * i * omegas) for i in range(noise_subspaces.shape[1])]).T
-
-        pseudo_spectrums = np.zeros(shape=(noise_subspaces.shape[0], e_omegas.shape[0]), dtype=complex)
+        noise_subspaces = self.noise_subspaces()
+        thetas = np.linspace(-np.pi, np.pi, 360)
+        pseudo_spectrums = np.zeros(shape=(noise_subspaces.shape[0], thetas.shape[0]))
         maximums = np.zeros(shape=(noise_subspaces.shape[0]))
 
         for i in range(noise_subspaces.shape[0]):
-            inv_spectrum = np.array([np.dot(np.dot(np.dot(np.conj(e_omegas[j]), noise_subspaces[i]), np.conj(noise_subspaces[i]).T), e_omegas[j]) for j in range(e_omegas.shape[0])])
+            print(i)
+            pseudo_spectrum = np.zeros(shape=thetas.shape)
 
-            pseudo_spectrums[i] = np.reciprocal(np.abs(inv_spectrum))
-            maximums[i] = 180 / np.pi * omegas[np.argmax(pseudo_spectrums[i])]
+            for j in range(thetas.shape[0]):
+                pseudo_spectrum[j] = np.reciprocal(np.abs(np.conj(self.a(thetas[j], d_antenne)).T @ noise_subspaces[i] @ np.conj(noise_subspaces[i]).T @ self.a(thetas[j], d_antenne)))
 
-        pseudo_spectrum = np.abs(np.mean(pseudo_spectrums, axis=0))
+            pseudo_spectrums[i] = pseudo_spectrum
 
-        maximum = np.mean(maximums)
-        std_error_maximum = 3*np.std(maximums) # Assumption of a Gaussian distribution
+            maximums[i] = 180 / np.pi * thetas[np.argmax(pseudo_spectrum)]
 
-        return(omegas, pseudo_spectrum, maximum, std_error_maximum)
+        return (maximums)
 
-    def plot_pseudo_spectrum(self, rx, tx, subcarrier):
+    def plot_pseudo_spectrum(self):
         """Tracé du pseudo-spectre de l'algorithme MUSIC"""
-        pseudo_spectrum = self.pseudo_spectrum(rx, tx, subcarrier)
+        pseudo_spectrum = self.pseudo_spectrum()
 
         plt.figure()
         plt.title(self.path + "\nMaximum : " + str(pseudo_spectrum[2]) + "$\pm$" + str(pseudo_spectrum[3]))
@@ -459,10 +467,8 @@ class CSI:
             # On écrit notre matrice qui correspondra au sous-espace signal et on calcule les valeurs propres
             M = np.linalg.pinv(Us1) @ Us2
             eigvals, eigvecs = np.linalg.eig(M)
-            # print(eigvecs)
 
-            temp_thetas = 180/np.pi * np.unwrap(np.arcsin(-long_onde * np.angle(eigvals) / (2 * np.pi * d_antenne)))
-            thetas[tx] = temp_thetas
+            thetas[tx] = 180/np.pi * np.unwrap(np.arcsin(-long_onde * np.angle(eigvals) / (2 * np.pi * d_antenne)))
 
         return thetas
 
@@ -502,19 +508,19 @@ class CSI:
         m = self.params["Nsubcarriers"]//2
         P = np.zeros(shape=(2 * m, 2 * m))
 
-        # # Permutations sur les colonnes
-        # for j in range(P.shape[1]):
-        #     if j % 2 == 0:
-        #         P[int(j/2) + m, j] = 1
-        #     else:
-        #         P[int((j + 1) / 2), j] = 1
+        # Permutations sur les colonnes
+        for j in range(P.shape[1]):
+            if j % 2 == 0:
+                P[int(j/2) + m, j] = 1
+            else:
+                P[int((j + 1) / 2), j] = 1
 
         # Permutations sur les lignes
-        for i in range(P.shape[0]):
-            if i % 2 == 0:
-                P[i, int(i/2) + m] = 1
-            else:
-                P[i, int((i + 1) / 2)] = 1
+        # for i in range(P.shape[0]):
+        #     if i % 2 == 0:
+        #         P[i, int(i/2) + m] = 1
+        #     else:
+        #         P[i, int((i + 1) / 2)] = 1
 
         return P
 
