@@ -416,7 +416,15 @@ class CSI:
 
     def Ce_matrix(self, paquet):
         """Création de la matrice Ce à partir d'un seul paquet"""
-        res = self.get_raw_data()[paquet]
+        # Sans assainissement
+        # res = self.get_raw_data()[paquet]
+
+        # Avec assainissement
+        amp = self.process_amp()[paquet]
+        phase = self.process_phase()[paquet]
+
+        res = amp * np.exp(1j * phase)
+        #####
 
         m = self.params["Nsubcarriers"] // 2  # Nombre de lignes des sous-matrices
         r = self.params["Nsubcarriers"] // 2 + 1  # Nombre de colonnes des sous-matrices

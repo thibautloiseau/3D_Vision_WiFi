@@ -7,15 +7,152 @@ import numpy as np
 import reflecteur
 
 def main():
-    ####################################################################################################################
-    # Mesures continues MUSIC
-    CSI = continuous.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/shorten_continuous.npy")
-    thetas = CSI.pseudo_spectrum(2.7e-2)
+    # Traitement stats MMP réflecteur + sans LOS
 
-    plt.plot([i for i in range(len(thetas))], thetas, '+')
-    plt.xlabel("Paquet (Vision temporelle)")
-    plt.ylabel("DoA estimée par MUSIC (°)")
-    plt.show()
+    # Paquet par paquet
+    # with open('mmp_ref_los.json', 'r') as f:
+    #     data = json.load(f)
+    #
+    # dico_mmp_ref_los = {}
+    #
+    # for key in data.keys():
+    #     if data[key]['Theta'] not in dico_mmp_ref_los.keys():
+    #         dico_mmp_ref_los[data[key]['Theta']] = {}
+    #
+    #     dico_mmp_ref_los[data[key]['Theta']][key[-1]] = {}
+    #
+    #     dico_mmp_ref_los[data[key]['Theta']][key[-1]]['mean_1'] = np.mean(data[key]['1'])
+    #     dico_mmp_ref_los[data[key]['Theta']][key[-1]]['std_1'] = np.std(data[key]['1'])
+    #
+    #     dico_mmp_ref_los[data[key]['Theta']][key[-1]]['mean_2'] = np.mean(data[key]['2'])
+    #     dico_mmp_ref_los[data[key]['Theta']][key[-1]]['std_2'] = np.std(data[key]['2'])
+    #
+    # with open('stats_mmp_ref_los.json', 'w+') as f:
+    #     json.dump(dico_mmp_ref_los, f, indent=2)
+
+    # Agregation
+    # dico_mmp_ref_no_los_agreg = {}
+    #
+    # for csi in os.listdir('acquisitions/01-04-2021_petite_chambre'):
+    #     if 'no' in csi:
+    #         CSI = process.CSI('acquisitions/01-04-2021_petite_chambre/' + csi)
+    #         dico_mmp_ref_no_los_agreg[csi] = CSI.aggregation_DoA_MMP(2.7e-2)[0, 0]
+    #
+    # with open('mmp_ref_no_los_agr.json', 'w+') as f:
+    #     json.dump(dico_mmp_ref_no_los_agreg, f, indent=2)
+    ####################################################################################################################
+    # # Mesures avec réflecteur et avec LoS MMP
+    #
+    # dico_mmp_ref = {}
+    #
+    # # Paquet par paquet
+    # for csi in os.listdir("acquisitions/01-04-2021_petite_chambre"):
+    #     if 'no' not in csi and 'H' in csi:
+    #         dico_mmp_ref[csi] = {}
+    #
+    #         print(csi)
+    #
+    #         L1 = int(csi.split('L1_')[1].split('_L')[0])
+    #         L = int(csi.split('L_')[1].split('_')[0])
+    #         H = int(csi.split('H_')[1].split('_L1')[0])
+    #
+    #         dico_mmp_ref[csi]['Theta'] = 180/np.pi * np.arctan(H/(L-L1))
+    #
+    #         CSI = process.CSI("acquisitions/01-04-2021_petite_chambre/" + csi)
+    #         no_paquets = CSI.get_raw_data().shape[0]
+    #
+    #         thetas_1 = np.zeros(shape=no_paquets)
+    #         thetas_2 = np.zeros(shape=no_paquets)
+    #
+    #         for paquet in range(no_paquets):
+    #             print('\t' + str(paquet))
+    #             thetas = CSI.DoA_MMP(paquet, 2.7e-2)[0]
+    #             thetas_1[paquet] = thetas[0]
+    #             thetas_2[paquet] = thetas[1]
+    #
+    #         dico_mmp_ref[csi]['1'] = thetas_1.tolist()
+    #         dico_mmp_ref[csi]['2'] = thetas_2.tolist()
+    #
+    #         with open('mmp_ref_los.json', 'w+') as f:
+    #             json.dump(dico_mmp_ref, f, indent=2)
+
+    ####################################################################################################################
+    # Traitement stats MMP réflecteur + sans LOS
+
+    # Paquet par paquet
+    # with open('mmp_ref_no_los.json', 'r') as f:
+    #     data = json.load(f)
+    #
+    # dico_mmp_ref_no_los = {}
+    #
+    # for key in data.keys():
+    #     if data[key]['Theta'] not in dico_mmp_ref_no_los.keys():
+    #         dico_mmp_ref_no_los[data[key]['Theta']] = {}
+    #
+    #     dico_mmp_ref_no_los[data[key]['Theta']][key[-1]] = {}
+    #
+    #     dico_mmp_ref_no_los[data[key]['Theta']][key[-1]]['mean'] = np.mean(data[key]['1'])
+    #     dico_mmp_ref_no_los[data[key]['Theta']][key[-1]]['std'] = np.std(data[key]['1'])
+    #
+    # with open('stats_mmp_ref_no_los.json', 'w+') as f:
+    #     json.dump(dico_mmp_ref_no_los, f, indent=2)
+
+    # Agregation
+    # dico_mmp_ref_no_los_agreg = {}
+    #
+    # for csi in os.listdir('acquisitions/01-04-2021_petite_chambre'):
+    #     if 'no' in csi:
+    #         CSI = process.CSI('acquisitions/01-04-2021_petite_chambre/' + csi)
+    #         dico_mmp_ref_no_los_agreg[csi] = CSI.aggregation_DoA_MMP(2.7e-2)[0, 0]
+    #
+    # with open('mmp_ref_no_los_agr.json', 'w+') as f:
+    #     json.dump(dico_mmp_ref_no_los_agreg, f, indent=2)
+
+    ####################################################################################################################
+    # Mesures avec réflecteur et sans LoS MMP
+
+    # dico_mmp_ref = {}
+    #
+    # # Paquet par paquet
+    # for csi in os.listdir("acquisitions/01-04-2021_petite_chambre"):
+    #     if 'no' in csi:
+    #         dico_mmp_ref[csi] = {}
+    #
+    #         print(csi)
+    #
+    #         L1 = int(csi.split('L1_')[1].split('_L')[0])
+    #         L = int(csi.split('L_')[1].split('_')[0])
+    #         H = int(csi.split('H_')[1].split('_L1')[0])
+    #
+    #         dico_mmp_ref[csi]['Theta'] = 180/np.pi * np.arctan(H/(L-L1))
+    #
+    #         CSI = process.CSI("acquisitions/01-04-2021_petite_chambre/" + csi)
+    #         no_paquets = CSI.get_raw_data().shape[0]
+    #
+    #         thetas_1 = np.zeros(shape=no_paquets)
+    #         thetas_2 = np.zeros(shape=no_paquets)
+    #
+    #         for paquet in range(no_paquets):
+    #             print('\t' + str(paquet))
+    #             thetas = CSI.DoA_MMP(paquet, 2.7e-2)[0]
+    #             thetas_1[paquet] = thetas[0]
+    #             thetas_2[paquet] = thetas[1]
+    #
+    #         dico_mmp_ref[csi]['1'] = thetas_1.tolist()
+    #         dico_mmp_ref[csi]['2'] = thetas_2.tolist()
+    #
+    #         with open('mmp_ref_no_los.json', 'w+') as f:
+    #             json.dump(dico_mmp_ref, f, indent=2)
+
+    ####################################################################################################################
+    # # Mesures continues MUSIC
+    # CSI = continuous.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/shorten_continuous.npy")
+    # thetas = CSI.pseudo_spectrum(2.7e-2)
+    #
+    # plt.plot([i for i in range(len(thetas))], thetas, '+')
+    # plt.xlabel("Paquet (Vision temporelle)")
+    # plt.ylabel("DoA estimée par MUSIC (°)")
+    # plt.show()
 
     ####################################################################################################################
     # Mesures continues MMP
@@ -28,6 +165,8 @@ def main():
     # for paquet in range(no_acq):
     #     print(paquet)
     #     DoAs[paquet] = [paquet, CSI.DoA_MMP(paquet, 2.7e-2)[0]]
+    #
+    # print(np.max(DoAs[:, 1]))
     #
     # plt.plot(DoAs[:, 0], DoAs[:, 1], '+')
     # plt.xlabel("Paquet (Vision temporelle)")
@@ -75,30 +214,30 @@ def main():
 
     ####################################################################################################################
     # Mesures MMP, acquisitions discrètes
-    # dico_mmp = {}
-    #
-    # for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
-    #     if "continuous" not in doc:
-    #         print(doc)
-    #         CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
-    #         no_acq = CSI.get_raw_data().shape[0]
-    #
-    #         dico_mmp[doc] = {}
-    #
-    #         thetas_1 = np.zeros(shape=no_acq)
-    #         thetas_2 = np.zeros(shape=no_acq)
-    #
-    #         for paquet in range(no_acq):
-    #             print('\t' + str(paquet))
-    #             thetas = CSI.DoA_MMP(paquet, 2.7e-2)[0]
-    #             thetas_1[paquet] = thetas[0]
-    #             thetas_2[paquet] = thetas[1]
-    #
-    #         dico_mmp[doc]['1'] = thetas_1.tolist()
-    #         dico_mmp[doc]['2'] = thetas_2.tolist()
-    #
-    #         with open('mmp_discrete.json', 'r+') as fp:
-    #             json.dump(dico_mmp, fp, indent=2)
+    dico_mmp = {}
+
+    for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
+        if "continuous" not in doc:
+            print(doc)
+            CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
+            no_acq = CSI.get_raw_data().shape[0]
+
+            dico_mmp[doc] = {}
+
+            thetas_1 = np.zeros(shape=no_acq)
+            thetas_2 = np.zeros(shape=no_acq)
+
+            for paquet in range(no_acq):
+                print('\t' + str(paquet))
+                thetas = CSI.DoA_MMP(paquet, 2.7e-2)[0]
+                thetas_1[paquet] = thetas[0]
+                thetas_2[paquet] = thetas[1]
+
+            dico_mmp[doc]['1'] = thetas_1.tolist()
+            dico_mmp[doc]['2'] = thetas_2.tolist()
+
+            with open('mmp_discrete_sanitized.json', 'w+') as fp:
+                json.dump(dico_mmp, fp, indent=2)
 
     ####################################################################################################################
     # Traitement stats discrètes MUSIC
