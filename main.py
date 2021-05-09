@@ -4,9 +4,31 @@ import continuous_csi as continuous
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import stats
 import reflecteur
 
 def main():
+    # Traitement MMP avec assainissement, acquisitions discrètes
+
+    # with open('mmp_discrete_sanitized.json', 'r+') as f:
+    #     data = json.load(f)
+    #
+    # stats_mmp = np.zeros(shape=(len(data.keys()), 3))
+    #
+    # for idx, true_angle in enumerate(data.keys()):
+    #     stats_mmp[idx] = [int(true_angle), np.mean(data[true_angle]['1']), np.std(data[true_angle]['1'])]
+    #
+    # plt.errorbar(stats_mmp[:, 0], stats_mmp[:, 1], yerr=stats_mmp[:, 2], ecolor='r', fmt='bo', label='MMP')
+    # plt.plot(stats_mmp[:, 0], stats_mmp[:, 0], 'g', label='Valeurs attendues')
+    #
+    # plt.legend(loc='upper right')
+    # plt.xlabel('AoA attendue (°)')
+    # plt.ylabel('AoA estimée avec MMP (°)')
+    #
+    # print(stats_mmp)
+    #
+    # plt.show()
+    ####################################################################################################################
     # Traitement stats MMP réflecteur + sans LOS
 
     # Paquet par paquet
@@ -176,7 +198,7 @@ def main():
     ####################################################################################################################
     # Traitement stats discrètes MMP
 
-    # with open('mmp_discrete.json', 'r') as f:
+    # with open('stats/mmp_discrete.json', 'r') as f:
     #     data = json.load(f)
     #
     # stats_mmp = np.zeros(shape=(len(data.keys()), 3))
@@ -191,53 +213,82 @@ def main():
     # plt.xlabel('AoA attendue (°)')
     # plt.ylabel('AoA estimée avec MMP (°)')
     #
-    # print(stats_mmp)
+    # # Régression linéaire à partir de -40°
+    # x = stats_mmp[stats_mmp[:, 0] >= -40][:, 0]
+    # y = stats_mmp[stats_mmp[:, 0] >= -40][:, 1]
     #
+    # slope, intercept, r_value, _, _ = stats.linregress(x, y)
+    #
+    # y_fit = slope*x + intercept
+    #
+    # plt.plot(x, y_fit, 'orange')
+    # plt.annotate("y = " + str(slope)[:4] + "x - " + str(-intercept)[:5] + ", R² = " + str(r_value)[:5], (x[0]+15, y_fit[0]), size=20)
+
     # plt.show()
 
     # Agregation
-    # no_files = len([csi for csi in os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut") if 'continuous' not in csi])
-    # stats_mmp_agr = np.zeros(shape=(no_files, 2))
-    #
-    # for idx, csi in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
-    #     if 'continuous' not in csi:
-    #         print(csi)
-    #         CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + csi)
-    #         stats_mmp_agr[idx] = [int(csi), CSI.aggregation_DoA_MMP(2.7e-2)[0, 0]]
-    #
-    # plt.plot(stats_mmp_agr[:, 0], stats_mmp_agr[:, 1], 'b+', label='MMP')
-    # plt.plot([-80, 80], [-80, 80], 'r-', label='Valeurs attendues')
-    # plt.legend(loc='upper right')
-    # plt.xlabel('AoA attendue (°)')
-    # plt.ylabel('AoA estimée avec MMP (°)')
-    # plt.show()
+    no_files = len([csi for csi in os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut") if 'continuous' not in csi])
+    stats_mmp_agr = np.zeros(shape=(no_files, 2))
+
+    for idx, csi in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
+        if 'continuous' not in csi:
+            print(csi)
+            CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + csi)
+            stats_mmp_agr[idx] = [int(csi), CSI.aggregation_DoA_MMP(2.7e-2)[0, 0]]
+
+    plt.plot(stats_mmp_agr[:, 0], stats_mmp_agr[:, 1], 'b+', label='MMP')
+    plt.plot([-80, 80], [-80, 80], 'r-', label='Valeurs attendues')
+    plt.legend(loc='upper right')
+    plt.xlabel('AoA attendue (°)')
+    plt.ylabel('AoA estimée avec MMP (°)')
+
+    # Régressions linéaires pour les deux morceaux entre -65 et 15°, et 20 et 80°
+    x1 = stats_mmp_agr[(stats_mmp_agr[:, 0] >= -65) & (stats_mmp_agr[:, 0] <= 15)][:, 0]
+    y1 = stats_mmp_agr[(stats_mmp_agr[:, 0] >= -65) & (stats_mmp_agr[:, 0] <= 15)][:, 1]
+
+    x2 = stats_mmp_agr[stats_mmp_agr[:, 0] >= 20][:, 0]
+    y2 = stats_mmp_agr[stats_mmp_agr[:, 0] >= 20][:, 1]
+
+    slope1, intercept1, r_value1, _, _ = stats.linregress(x1, y1)
+    slope2, intercept2, r_value2, _, _ = stats.linregress(x2, y2)
+
+    y_fit1 = slope1*x1 + intercept1
+    y_fit2 = slope2*x2 + intercept2
+
+    plt.plot(x1, y_fit1)
+    plt.plot(x2, y_fit2)
+
+    plt.annotate("y = " + str(slope1)[:4] + "x + " + str(intercept1)[:5] + ", R² = " + str(r_value1)[:5], (x1[0]-50, y_fit1[0]), size=20)
+    plt.annotate("y = " + str(slope2)[:4] + "x - " + str(-intercept2)[:5] + ", R² = " + str(r_value2)[:5], (x2[0]+15, y_fit2[0]), size=20)
+
+    plt.show()
 
     ####################################################################################################################
     # Mesures MMP, acquisitions discrètes
-    dico_mmp = {}
-
-    for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
-        if "continuous" not in doc:
-            print(doc)
-            CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
-            no_acq = CSI.get_raw_data().shape[0]
-
-            dico_mmp[doc] = {}
-
-            thetas_1 = np.zeros(shape=no_acq)
-            thetas_2 = np.zeros(shape=no_acq)
-
-            for paquet in range(no_acq):
-                print('\t' + str(paquet))
-                thetas = CSI.DoA_MMP(paquet, 2.7e-2)[0]
-                thetas_1[paquet] = thetas[0]
-                thetas_2[paquet] = thetas[1]
-
-            dico_mmp[doc]['1'] = thetas_1.tolist()
-            dico_mmp[doc]['2'] = thetas_2.tolist()
-
-            with open('mmp_discrete_sanitized.json', 'w+') as fp:
-                json.dump(dico_mmp, fp, indent=2)
+    # dico_mmp = {}
+    #
+    # for idx, doc in enumerate(os.listdir("acquisitions/03-03-2021_grosse_chambre_Thibaut")):
+    #     if "continuous" not in doc:
+    #         print(doc)
+    #         CSI = process.CSI("acquisitions/03-03-2021_grosse_chambre_Thibaut/" + doc)
+    #         no_acq = CSI.get_raw_data().shape[0]
+    #
+    #         dico_mmp[doc] = {}
+    #
+    #         thetas_1 = np.zeros(shape=no_acq)
+    #         thetas_2 = np.zeros(shape=no_acq)
+    #
+    #         for paquet in range(no_acq):
+    #             print('\t' + str(paquet))
+    #             thetas = CSI.DoA_MMP(paquet, 2.7e-2)[0]
+    #             thetas_1[paquet] = thetas[0]
+    #             thetas_2[paquet] = thetas[1]
+    #
+    #         dico_mmp[doc]['1'] = thetas_1.tolist()
+    #         dico_mmp[doc]['2'] = thetas_2.tolist()
+    #
+    #         with open('mmp_discrete_sanitized.json', 'w+') as fp:
+    #             json.dump(dico_mmp, fp, indent=2)
 
     ####################################################################################################################
     # Traitement stats discrètes MUSIC
